@@ -16,6 +16,59 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.*
 
 
+interface  Type<T> {
+    val name: String
+    fun fromString(v:String): T
+    fun valString(v:String) : Boolean
+    val format: String
+}
+
+class ListType<T, TT:Type<T>>(
+        val elementType:TT,
+        override val name: String
+
+) : Type<List<T>> {
+    override fun fromString(v: String): List<T> {
+        return v.split(",".toRegex()).map {elementType.fromString(it)}
+    }
+
+    override fun valString(v: String): Boolean {
+        return !(false in v.split(",".toRegex()).map {elementType.valString(it)})
+    }
+
+    override val format = "csv string"
+}
+
+object StringType : Type<String> {
+    override val name = "String"
+
+    override fun valString(v: String) = true
+
+    override fun fromString(v: String) =  v
+
+    override val format = ""
+
+}
+
+val  StringListType = ListType<String, StringType> (StringType, "Strings")
+
+
+
+interface Validator<T> {
+    fun validate(v:T) : Boolean
+    val help: String
+}
+
+data class FieldMeta1<T>(
+        val type: Type<T>,
+        val name: String,
+        val description: String,
+        val validator: Validator<T>
+)
+
+
+
+
 data class FieldMeta<T>(
         val name: String,
         val description: String,

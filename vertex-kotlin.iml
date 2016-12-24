@@ -11,27 +11,36 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="KotlinJavaRuntime" level="project" />
-    <orderEntry type="library" name="Maven: io.vertx:vertx-core:3.3.3" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-common:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-buffer:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-transport:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-handler:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-codec:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-handler-proxy:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-codec-socks:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-codec-http:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-codec-http2:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-resolver:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-resolver-dns:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-codec-dns:4.1.5.Final" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.7.4" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.7.4" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlinx:vertx3-lang-kotlin:0.0.15" level="project" />
+    <orderEntry type="library" name="Maven: io.vertx:vertx-core:3.3.0.CR2" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-common:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-buffer:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-transport:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-handler:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-codec:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-handler-proxy:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-codec-socks:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-codec-http:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-codec-http2:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-resolver:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-resolver-dns:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-codec-dns:4.1.1.Final" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.7.4" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: io.vertx:vertx-jdbc-client:3.3.0.CR2" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: io.vertx:vertx-sql-common:3.3.0.CR2" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: com.mchange:c3p0:0.9.5.2" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: com.mchange:mchange-commons-java:0.2.11" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: io.vertx:vertx-mail-service:3.3.0.CR2" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: io.vertx:vertx-mail-client:3.3.0.CR2" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: io.vertx:vertx-service-proxy:3.3.0.CR2" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: io.vertx:vertx-lang-js:3.3.0.CR2" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: io.vertx:vertx-service-factory:3.3.0.CR2" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.0.5-2" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-runtime:1.0.5-2" level="project" />
     <orderEntry type="library" name="Maven: io.reactivex:rxkotlin:0.60.0" level="project" />
     <orderEntry type="library" name="Maven: io.reactivex:rxjava:1.2.4" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.module:jackson-module-kotlin:2.8.4" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.8.4" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.8.0" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-reflect:1.0.3" level="project" />
   </component>
