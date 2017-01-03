@@ -40,6 +40,7 @@ class LogStream(
 }
 
 
+
 class Logger(
         val name: String,
         private val info_: ((Any) -> Unit) = ::println,
