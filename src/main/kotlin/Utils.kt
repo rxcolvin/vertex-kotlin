@@ -27,8 +27,8 @@ fun testJdkVersionForEA () {
 /**
  * Load a property map from a file
  */
-fun loadProperties(fileName: String): Map<String, String> =
-        File(fileName).readLines()
+fun loadProperties(file: File): Map<String, String> =
+        file.readLines()
                 .map { it.trim() }
                 .filter { !it.startsWith("#") }
                 .map { it.split("=".toRegex(), 2) }
@@ -43,6 +43,10 @@ fun loadProperties(args: Array<String>) : Map<String, String>{
            .map {it.split("=".toRegex(), 2) }
             .map { Pair(it[0], it.getOrElse(1, {""})) }
             .associate { it }
+}
+
+fun loadProperties(s: String, sep: String = ",") : Map<String, String> {
+    return loadProperties(s.split(sep.toRegex()).toTypedArray())
 }
 
 
