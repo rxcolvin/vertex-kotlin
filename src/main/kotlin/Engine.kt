@@ -10,7 +10,6 @@ import rx.Observable
 import rx.Observable.error
 import rx.Observable.just
 import rx.lang.kotlin.onError
-import utils.getOrThrow
 import utils.loadProperties
 import java.util.concurrent.ConcurrentHashMap
 
@@ -41,23 +40,22 @@ fun main(args: Array<String>) {
       config = HttpEngineConfig(),
       buildRequest = ::buildRequest,
       buildResponse = ::buildResponse,
-      requestRouterConfigs = listOf(
-          FullRestAdapter<Context, Person, String>(
-              assetType = "person",
-              dataManager = personDataManager,
-              string2Asset = ::stringToPerson,
-              buildContext = ::requestToContext,
-              asset2String = ::personToString,
-              string2Id = { it },
-              exception2Resp = ::exceptionToResponse
-          )
+      processor =
+      FullRestAdapter<Context, Person, String>(
+          assetType = "person",
+          dataManager = personDataManager,
+          string2Asset = ::stringToPerson,
+          buildContext = ::requestToContext,
+          asset2String = ::personToString,
+          string2Id = { it },
+          exception2Resp = ::exceptionToResponse
       )
   )
 
 
+
   engine.start()
 }
-
 
 
 fun stringToPerson(s: String): Person {
@@ -81,13 +79,10 @@ fun exceptionToResponse(exception: Exception) =
     )
 
 
-fun buildRequest(httpReq: HttpServerRequest) : Request {
-  var content = ""
-  httpReq.bodyHandler({ content = String(it.bytes) })
+fun buildRequest(httpReq: HttpServerRequest): Request {
   return Request(
       action = methodToAction(httpReq.method()),
-      path = httpReq.path().split("/".toRegex()).filter { it.isNotEmpty() },
-      content = content
+      path = httpReq.path().split("/".toRegex()).filter { it.isNotEmpty() }
   )
 }
 
@@ -137,26 +132,24 @@ interface Manageable {
   // monitoring() - aide memoir
 }
 
-interface RequestRouter<REQ, RESP> {
-  fun isDefinedFor(request: REQ): Handler<RESP>?
 
-  interface Handler<RESP> {
-    fun invoke() : RESP
+interface Handler<RESP> {
+
+  interface NoBody<RESP> : Handler <RESP> {
+    fun invoke(): RESP
   }
 
-  interface NoBodyHandler<RESP>  : Handler <RESP>{
+  interface Body<RESP> : Handler <RESP> {
+    fun invoke(text: String): RESP
   }
 
-  interface BodyHandler<RESP>  : Handler <RESP>{
-    fun body(text:String) : RESP
+  interface StreamBody<RESP> : Handler <RESP> {
+    fun invoke(stream: Iterator<String>): RESP
   }
 
-  interface LargeBodyHandler<RESP>  : Handler <RESP>{
-    fun bodyPart(text: String)
-  }
-
-
+  //+ Others?? (Form?)
 }
+
 
 fun httpServerOptions(
     port: Int
@@ -182,7 +175,7 @@ class VertxHttpServerEngine<REQ, RESP>(
     buildResponse: (RESP, HttpServerResponse) -> Unit,
     val name: String,
     private val config: HttpEngineConfig,
-    private val requestRouterConfigs: List<RequestRouter<REQ, RESP>>
+    private val processor: (REQ) -> Handler<RESP>?
 ) : Manageable {
   val server = vertx.createHttpServer(
       httpServerOptions(port = config.port)
@@ -191,28 +184,27 @@ class VertxHttpServerEngine<REQ, RESP>(
   init {
     server.requestHandler {
       val req = buildRequest(it)
-      var handled = false
-      for (rhc in requestRouterConfigs) {
-        val h = rhc.isDefinedFor(req)
-        if ( h != null) {
-          when (h) {
-            is RequestRouter.NoBodyHandler<*> -> {}
-            is RequestRouter.BodyHandler<*> ->  {
-              it.bodyHandler {
-                  h.body(String(it.bytes))
-              }
-            }
-            is RequestRouter.LargeBodyHandler<*> -> {
+      val h = processor.invoke(req)
+      val resp = it.response()
+      if (h != null) {
+        when (h) {
 
+          is Handler.NoBody<RESP> -> {
+            it.bodyHandler {
+              buildResponse(h.invoke(), resp)
             }
           }
-          buildResponse(h.invoke(), it.response())
-          handled = true
-          break
+          is Handler.Body<RESP> -> {
+            it.bodyHandler {
+              buildResponse(h.invoke(String(it.bytes)), resp)
+            }
+          }
         }
-      }
-      if (!handled) {
-        it.response().setStatusCode(400).end("UNKNOWN")
+      } else {
+        it.bodyHandler {
+          resp.setStatusCode(400).end("UNKNOWN")
+
+        }
       }
     }
   }
@@ -251,8 +243,7 @@ enum class Action {
  */
 data class Request(
     val action: Action,
-    val path: List<String>,
-    val content: String
+    val path: List<String>
 )
 
 /**
@@ -275,55 +266,44 @@ class FullRestAdapter<C, T, ID>(
     val exception2Resp: (Exception) -> Response,
     val dataManager: DataManager<T, ID>,
     val string2Id: (String) -> ID
-) : RequestRouter<Request, Response> {
+) : Function1<Request, Handler<Response>?> {
+
+  inner class Get(
+      private val request: Request
+  ) : Handler.NoBody<Response> {
+    override fun invoke(): Response {
+      val id = string2Id(request.path[1])
+      val t = dataManager.id(id).onError { throw it }.toBlocking().first()
+      return Response(
+          content = asset2String(t)
+      )
+    }
+  }
+
+  inner class Post(
+      private val request: Request
+  ) : Handler.Body<Response> {
 
 
-  override fun isDefinedFor(request: Request): RequestRouter.Handler<Response>? =
-      if (request.path[0] == assetType && (request.action == Action.GET || request.action == Action.POST)) {
-        null
-      } else {
-        null
-      }
+    override fun invoke(text: String): Response {
+      val t = dataManager.insert(string2Asset(text)).onError { throw it }.toBlocking().first()
+      return Response(
+          content = asset2String(t)
+      )
+    }
+  }
 
-  override fun invoke(it: Request):  =
-      try {
-        when (it.action) {
-          Action.GET -> get(it)
-          Action.PUT -> todo(it)
-          Action.POST -> insert(it)
-          Action.DELETE -> todo(it)
-          Action.OPTIONS -> todo(it)
-          Action.PATCH -> todo(it)
-          Action.HEAD -> todo(it)
-          Action.TRACE -> todo(it)
-          Action.CONNECT -> todo(it)
-          Action.OTHER -> todo(it)
+
+  override fun invoke(
+      req: Request
+  ): Handler<Response>? =
+      if (req.path[0] == assetType) {
+        when (req.action) {
+          Action.GET -> Get(req)
+          Action.POST -> Post(req)
+          else -> null
         }
-      } catch (e: Exception) {
-        exception2Resp(e)
-      }
-
-
-  private fun get(request: Request): Response {
-    val id = string2Id(request.path[1])
-    val t = dataManager.id(id).onError { throw it }.toBlocking().first()
-    return Response(
-        content = asset2String(t)
-    )
-  }
-
-  private fun insert(request: Request): Response {
-    val t = dataManager.insert(string2Asset(request.content)).onError { throw it }.toBlocking().first()
-    return Response(
-        content = asset2String(t)
-    )
-  }
-
-  private fun todo(request: Request): Response = Response(
-      content = "TODO",
-      status = 400
-  )
-
+      } else null
 
 }
 
