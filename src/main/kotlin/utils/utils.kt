@@ -1,11 +1,13 @@
 package utils
 
-//import meta.EntityMeta
+//import entitymeta.EntityMeta
 import java.io.File
 import java.util.*
 import kotlin.collections.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.declaredMemberProperties
+import kotlin.reflect.full.declaredMemberProperties
 import java.lang.Enum as JavaLangEnum
 
 
@@ -195,3 +197,26 @@ fun <K,V> getFrom(k:K, vararg maps: Map<K, V>) : V? {
 }
 
 
+interface Manageable {
+  fun start()
+  fun stop()
+  // monitoring() - aide memoir
+}
+
+/**
+ *
+ */
+inline fun <reified FROM : Any, reified TO> convert(from: FROM): TO {
+    val con = TO::class.constructors.first()
+    val fromType = FROM::class
+    val params = con.parameters.map {
+        val name = it.name
+        Pair(con.parameters.first { it.name == name },
+            fromType.declaredMemberProperties.first { it.name == name }.get(from))
+
+    }.associate { it }
+
+    println(params)
+    return TO::class.constructors.first().callBy(params)
+
+}
