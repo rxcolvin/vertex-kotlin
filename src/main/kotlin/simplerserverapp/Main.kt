@@ -11,7 +11,7 @@ import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.kotlin.core.VertxOptions
-import utils.loadProperties
+import simplerserverapp.personMeta.personJsonHelper
 import vertxhttpserverengine.HttpEngineConfig
 import vertxhttpserverengine.VertxHttpServerEngine
 
@@ -30,9 +30,11 @@ fun main(args: Array<String>) {
       Person(
           uuid = "1",
           firstName = "John",
-          surname = "Doe"
+          surname = "Doe",
+          age = 34
       )
   ).toBlocking().first()
+
 
   val engine = VertxHttpServerEngine<Request, Response>(
       name = "REST Server",
@@ -44,9 +46,9 @@ fun main(args: Array<String>) {
       FullRestAdapter<Context, Person, String>(
           assetType = "person",
           dataManager = personDataManager,
-          string2Asset = ::stringToPerson,
+          string2Asset = personJsonHelper::fromJson,
           buildContext = ::requestToContext,
-          asset2String = ::personToString,
+          asset2String = personJsonHelper::toJson,
           string2Id = { it },
           exception2Resp = ::exceptionToResponse
       )
@@ -60,20 +62,12 @@ fun main(args: Array<String>) {
 
 
 
-fun stringToPerson(s: String): Person {
 
-  val map = loadProperties(s)
-  return Person(
-      uuid = map.getOrDefault("uuid", ""),
-      firstName = map.getOrDefault("firstName", ""),
-      surname = map.getOrDefault("surname", "")
-  )
-}
+
+
 
 fun requestToContext(request: Request): Context = Context("1212")
 
-fun personToString(person: Person): String =
-    "uuid=${person.uuid},firstName=${person.firstName},surname=${person.surname}"
 
 fun exceptionToResponse(exception: Exception) =
     Response(
@@ -114,10 +108,6 @@ fun methodToAction(m: HttpMethod): Action =
     }
 
 
-data class Person(
-    val uuid: String,
-    val firstName: String,
-    val surname: String
-)
+
 
 data class Context(val callerIp: String)

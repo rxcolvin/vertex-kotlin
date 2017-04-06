@@ -1,11 +1,13 @@
 package zztestapps
 
 import entitymeta.EntityFieldMeta
+import entitymeta.EntityJSONHelper
 import entitymeta.EntityMeta
-import entitymeta.mapToEntity
+import io.vertx.core.json.JsonObject
 import meta.intFieldMeta
 import meta.stringFieldMeta
 import validators.notEmptyString
+import java.math.BigDecimal
 
 /**
  * Created by richard.colvin on 24/03/2017.
@@ -25,7 +27,7 @@ object dd {
   )
 }
 
-object fooMeta : EntityMeta<Foo, Foo_> {
+object fooMeta {
   object fields {
     val name = EntityFieldMeta<String, Foo, Foo_>(
         fieldMeta = dd.name,
@@ -47,55 +49,106 @@ object fooMeta : EntityMeta<Foo, Foo_> {
     )
   }
 
-  override val entityName = "Foo"
-  override val entityMetaFields = fields.all_
-  override val builderFactory = ::Foo_
-  override val builder2Entity = ::foo
-  override val entity2Builder = ::foo_
-  override val entityMetaFieldMap = fields.all_.associateBy { it.fieldMeta.name }
-}
-
-
-fun main(args: Array<String>) {
-  val foo_ = fooMeta.builderFactory()
-  fooMeta.fields.name.set_(foo_, "Bob")
-  fooMeta.fields.age.set_(foo_, 34)
-  val foo = fooMeta.builder2Entity(foo_)
-  val foo2_ = fooMeta.entity2Builder(foo)
-
-  println(fooMeta.fields.age.fieldMeta.type.stringValidator("_f"))
-  println(fooMeta.entityMetaFieldMap["age"]!!.fieldMeta.validateAny(23))
-
-  fooMeta.entityMetaFieldMap["age"]!!.setAny(foo2_, 23)
-
-  val dataMap = mapOf(
-      "name" to "Fred",
-      "age" to "50"
+  val em = EntityMeta<Foo, Foo_>(
+      entityName = "Foo",
+      entityMetaFields = fields.all_,
+      builderFactory = {Foo_(null, null)},
+      builder2Entity = {
+        Foo(
+          it.name!!,
+          it.age!!
+        )
+      },
+      entity2Builder = {
+        Foo_(
+            it.name,
+            it.age
+        )
+      }
   )
-
-  println(mapToEntity(dataMap,  fooMeta))
 }
 
-data class Foo(
-    val name: String,
-    val age: Int
 
-)
+  fun main(args: Array<String>) {
 
-class Foo_(
-) {
-  var name: String? = null
-  var age: Int? = null
 
-}
+    val foo_ = fooMeta.em.builderFactory()
+    fooMeta.fields.name.set_(foo_, "Bob")
+    fooMeta.fields.age.set_(foo_, 34)
+    val foo = fooMeta.em.builder2Entity(foo_)
+    val foo2_ = fooMeta.em.entity2Builder(foo)
 
-fun foo(b: Foo_): Foo =
-    Foo(
-        b.name!!,
-        b.age!!
+    println(fooMeta.fields.age.fieldMeta.type.stringValidator("_f"))
+    println(fooMeta.em.entityMetaFieldMap["age"]!!.fieldMeta.validateAny(23))
+
+    fooMeta.em.entityMetaFieldMap["age"]!!.setAny(foo2_, 23)
+
+    val dataMap = mapOf(
+        "name" to "Fred",
+        "age" to 50,
+        "density" to 1.6,
+        "bignum" to BigDecimal("123456556565656565656565656565656564677654567898765.8765456789998"),
+        "mapping" to mapOf("x" to "yes", "z" to 45),
+        "list" to listOf("foo", "bar")
     )
 
+    val jsonObject = JsonObject(dataMap)
 
-fun foo_(f: Foo) = Foo_().apply {
-  this.name = f.name
-}
+    println(jsonObject)
+
+    jsonObject.map.forEach { (k, v) ->
+      println("$k=$v:${v.javaClass}")
+    }
+
+    val jsonString = jsonObject.encodePrettily()
+
+    println(jsonString)
+
+    val jsonObjectAgain = JsonObject(jsonString)
+
+    println("Again")
+    jsonObjectAgain.map.forEach { (k, v) ->
+      println("$k=$v:${v.javaClass}")
+    }
+
+    val jsonHelper = EntityJSONHelper<Foo, Foo_>(
+        em = fooMeta.em,
+        jsonToMap = { JsonObject(it).map },
+        mapToJson = { JsonObject(it).encodePrettily() }
+    )
+
+    val tt = jsonHelper.fromJson(
+        """
+      |{
+      |  "name": "Fred",
+      |  "age": 56
+      |}
+      """.trimMargin()
+    )
+
+    println(tt)
+
+    val jsonAgain = jsonHelper.toJson(tt)
+
+    println(jsonAgain)
+
+  }
+
+  data class Foo(
+      val name: String,
+      val age: Int
+
+  )
+
+  data class Foo_(
+
+    var name: String? = null,
+    var age: Int? = null
+
+  )
+
+
+
+  fun foo_(f: Foo) = Foo_().apply {
+    this.name = f.name
+  }

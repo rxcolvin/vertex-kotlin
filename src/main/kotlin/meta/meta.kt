@@ -4,8 +4,6 @@
 package meta
 
 import logging.Logger
-import validators.notEmptyString
-import javax.print.DocFlavor
 
 
 // The logger for this module set to a default value: generally should be reset.
@@ -14,16 +12,30 @@ var logger: Logger = Logger(
     debugEnabled = true
 )
 
-enum class JSONType{
-    STRING, NUMBER, LIST, MAP
+
+interface JSON<T, S> {
+  val fromJSON: (S) -> T
+  val toJSON: (T) -> S
+  fun fromJsonAny(a:Any) : Any = fromJSON(a as S)  as Any
+  fun toJsonAny(a: Any) : Any = toJSON(a as T) as Any
 }
+
+class JSONString<T>(
+    override val fromJSON: (String) -> T,
+    override val toJSON: (T) -> String
+) : JSON<T, String>
+
+class JSONNumber<T>(
+    override val fromJSON: (Number) -> T,
+    override val toJSON: (T) -> Number
+) : JSON<T, Number>
 
 data class Type<T>(
     val name: String,
     val fromString: (String) -> T,
     val toString: (T) -> String,
     val stringValidator: (String) -> String? = { null },
-    val jsonType: JSONType = JSONType.STRING
+    val json: JSON<T, out Any>
 )
 
 
@@ -31,7 +43,11 @@ val stringType = Type<String>(
     name = "string",
     fromString = { it },
     toString = { it },
-    stringValidator = { null }
+    stringValidator = { null },
+    json = JSONString<String>(
+        fromJSON = { it },
+        toJSON = { it }
+    )
 )
 
 val intType = Type<Int>(
@@ -39,7 +55,10 @@ val intType = Type<Int>(
     fromString = { it.toInt() },
     toString = { it.toString() },
     stringValidator = { if (it.toIntOrNull() != null) null else "Not a number" },
-    jsonType = JSONType.NUMBER
+    json = JSONNumber<Int>(
+        fromJSON = { it as Int }, //TODO
+        toJSON = { it }
+    )
 )
 
 /**

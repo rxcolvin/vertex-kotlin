@@ -90,23 +90,19 @@ data class EntityFieldMetaConfig<T>(
 /**
  * Define Meta data for a given entity type/entity builder type.
  *
- * Note a this point in time this uses the [EntityFieldMeta] constructor based on the KClass types. This may not work
- * in JS.
- *
  * @param name the name of the entity - must be unique within some context.
  * @param entityMetaFields a list of [EntityFieldMetaConfig] elements used to define the [EntityFieldMeta]s for this entity
  */
-interface EntityMeta<E : Any, E_ : Any> {
-    val entityName: String
-    val entityMetaFields: List<EntityFieldMeta<*, E, E_>>
-    val builderFactory: () -> E_
-    val builder2Entity: (E_) -> E
+data class EntityMeta<E : Any, E_ : Any> (
+    val entityName: String,
+    val entityMetaFields: List<EntityFieldMeta<*, E, E_>>,
+    val builderFactory: () -> E_,
+    val builder2Entity: (E_) -> E,
     val entity2Builder: (E) -> E_
-    val entityMetaFieldMap: Map<String, EntityFieldMeta<*, E, E_>>
+) {
+  val entityMetaFieldMap: Map<String, EntityFieldMeta<*, E, E_>>
+      = entityMetaFields.associateBy { it.fieldMeta.name }
 }
-
-
-
 
 
 //TODO: Move to a configuration package or something more general
