@@ -14,6 +14,39 @@ var logger: Logger = Logger(
     debugEnabled= true
 )
 
+interface FieldMetaHolder<T> {
+   val fieldMeta: FieldMeta<T>
+}
+
+interface EntityField<T,E : Any, E_ : Any> : FieldMetaHolder<T> {
+  val get: (E) -> T
+  val get_: (E_) -> T?
+  val set_: (E_, T?) -> Unit
+  val nullable: Boolean
+}
+
+interface JsonField<T, S> :  FieldMetaHolder<T> {
+  val fromJson: (S) -> T
+  val toJson: (T) -> S
+}
+
+val a: FieldMetaHolder<String> = object : FieldMetaHolder<String>, JsonField<String, String>, EntityField<String, Any, Any> {
+  override val fieldMeta: FieldMeta<String>
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+  override val get: (Any) -> String
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+  override val get_: (Any) -> String?
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+  override val set_: (Any, String?) -> Unit
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+  override val nullable: Boolean
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+  override val fromJson: (String) -> String
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+  override val toJson: (String) -> String
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+}
+
 /**
  * For a given Entity Type <E> and associated Entity Builder Type (<E_>) this classe
  * associates a FieldMeta with some storage in those typs; defining how

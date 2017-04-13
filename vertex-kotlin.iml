@@ -20,8 +20,6 @@
             </option>
             <option name="_commonCompilerArguments">
               <DummyImpl>
-                <option name="languageVersion" value="1.1" />
-                <option name="apiVersion" value="1.1" />
                 <option name="pluginClasspaths">
                   <array />
                 </option>
@@ -44,7 +42,7 @@
       </configuration>
     </facet>
   </component>
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
@@ -79,6 +77,7 @@
     <orderEntry type="library" name="Maven: io.reactivex:rxjava:1.2.4" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.module:jackson-module-kotlin:2.8.4" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.8.0" level="project" />
+    <orderEntry type="library" name="Maven: com.eclipsesource.minimal-json:minimal-json:0.9.4" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.spek:spek-api:1.0.89" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.junit.platform:junit-platform-runner:1.0.0-M3" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.junit.platform:junit-platform-launcher:1.0.0-M3" level="project" />
