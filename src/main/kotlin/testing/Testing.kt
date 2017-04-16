@@ -110,7 +110,7 @@ fun <T> assertThat( target:T,  matches: (T) -> Pair<Boolean, String>) {
 
 /*
 
-    val tests = tests(all) {
+    val tests = tests("all") {
         testingClass (EntityMeta::Class) {
             testingMethod(??) {
                 Given ("Desc") {
@@ -118,7 +118,8 @@ fun <T> assertThat( target:T,  matches: (T) -> Pair<Boolean, String>) {
                 Then ("Desc") {
                     it.something
                 }Should {
-                    Match ("Desc") {
+                    Match ("the number 10") {
+                        ::equals(10)
                     }
                     Match ("Desc" {
                     }

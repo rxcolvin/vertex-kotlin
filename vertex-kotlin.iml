@@ -54,6 +54,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="KotlinJavaRuntime" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-reflect:1.0.3" level="project" />
+    <orderEntry type="library" name="Maven: com.eclipsesource.minimal-json:minimal-json:0.9.4" level="project" />
     <orderEntry type="library" name="Maven: io.vertx:vertx-core:3.4.1" level="project" />
     <orderEntry type="library" name="Maven: io.netty:netty-common:4.1.8.Final" level="project" />
     <orderEntry type="library" name="Maven: io.netty:netty-buffer:4.1.8.Final" level="project" />
