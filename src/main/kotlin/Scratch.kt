@@ -1,7 +1,10 @@
 import json.jsonToMap
 import json.mapToJson
+import uimodel.ActionUI
+import uimodel.AppUI
+import uimodel.FieldEditorUI
+import uimodel.UIState
 import validators.notEmptyString
-import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.safeCast
 
@@ -106,7 +109,7 @@ class JsonParser<E, E_>(
   }
 
   fun unparse(entity: E): String {
-    val mm = HashMap<String, Any?>()
+    val mm:MutableMap<String, Any?>  =  mutableMapOf()
 
     jsonMeta.fields.all_.forEach {
       it.toJson(entity, mm)
@@ -213,6 +216,54 @@ object fooMeta {
       jsonToMap = jsonToMap,
       mapToJson = mapToJson
   )
+}
+
+
+// Controllers
+class EntityController<E, E_>(
+
+) {
+
+}
+
+class FieldEditorController<T, E, E_>(
+    private val ui: FieldEditorUI<T>,
+    private val entityField: EntityField<T, E, E_>
+) {
+    init {
+      ui.onUpdate = this::onUpdate
+    }
+
+    fun setEntityBuilder(eb: E_) {
+      ui.uiState = UIState<T> (
+          value = entityField.get_(eb)
+      )
+    }
+
+    private fun onUpdate(value: T) : UIState<T> {
+      return UIState<T> (
+          value = value
+      )
+    }
+}
+
+
+data class Entity
+
+class AppController(
+    ui: AppUI,
+    entityMeta: List<EntityMeta<*, *>>
+) {
+
+  init {
+
+  }
+
+
+  private fun onCreateEntity() {
+
+  }
+
 }
 
 fun main(args: Array<String>) {

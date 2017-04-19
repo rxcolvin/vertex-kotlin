@@ -3,21 +3,32 @@
  */
 package uimodel
 
+import kotlin.reflect.KClass
 
-interface UIComponent {
+
+interface UI{
     val name: String
 
 }
 
-interface UIEditor<T> : UIComponent  {
-    val uiState:UIState<T>
-    val onUpdate:(T)->UIState<T>
+interface UIFactory {
+   fun <T: Any> createFieldEditor(type: KClass<T>)
+  
+}
+
+interface FieldEditorUI<T> : UI  {
+    var uiState:UIState<T>
+    var onUpdate:(T)-> UIState<T>
 
 }
 
-interface UIAction : UIComponent {
+interface ActionUI : UI {
     val enabled : Boolean
-    val onFired : (source: UIAction) -> Unit
+    val onFired : (source: ActionUI) -> Unit
+}
+
+interface ActionGroupUI : UI {
+  val actions: MutableList<ActionUI>
 }
 
 
@@ -29,9 +40,25 @@ sealed class ValidState(val msg: String = "") {
 
 
 data class UIState<T> (
-        val value: T,
+        val value: T?,
         val isReadOnly: Boolean = false,
         val validState: ValidState = ValidState.OK,
         val hasFocus: Boolean = false
 
         )
+
+interface EntityEditorUI {
+
+}
+
+
+
+interface AppUI {
+
+  val actions: MutableList<ActionUI>
+
+
+
+}
+
+
