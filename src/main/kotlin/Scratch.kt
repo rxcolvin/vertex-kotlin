@@ -1,6 +1,5 @@
 import json.jsonToMap
 import json.mapToJson
-import uimodel.ActionUI
 import uimodel.AppUI
 import uimodel.FieldEditorUI
 import uimodel.UIState
@@ -248,7 +247,9 @@ class FieldEditorController<T, E, E_>(
 }
 
 
-data class Entity
+data class Entity (
+    val foo: String
+)
 
 class AppController(
     ui: AppUI,

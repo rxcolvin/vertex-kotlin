@@ -3,61 +3,108 @@
  */
 package uimodel
 
-import kotlin.reflect.KClass
-
-
-interface UI{
-    val name: String
+class Image {
 
 }
 
-interface UIFactory {
-   fun <T: Any> createFieldEditor(type: KClass<T>)
-  
-}
-
-interface FieldEditorUI<T> : UI  {
-    var uiState:UIState<T>
-    var onUpdate:(T)-> UIState<T>
+class Date {
 
 }
+
+class Time {
+
+}
+
+class Timestamp {
+
+}
+
+interface UI {
+  val name: String
+}
+
+interface FieldEditorUI<T> : UI {
+  var uiState: UIState<T>
+  var onUpdate: (String) -> UIState<T>
+}
+
+interface TextFieldEditorUI : FieldEditorUI<String> {
+  var format: String
+}
+
+interface LongFieldEditorUI : FieldEditorUI<Long> {
+  var range: Pair<Long, Long>
+  var style: String //Slider, List
+}
+
+interface DateFieldEditorUI : FieldEditorUI<Date> {
+  var range: Pair<Date, Date>
+  var style: String //Slider, List
+}
+
+
+interface ListEditorUI : UI {
+  var uiState: UIState<Int>
+  var onUpdate: (String) -> UIState<Int>
+  var style: String //Dropdown, radio
+  var values: List<String>
+}
+
+interface LabelUI : UI {
+  val label: String
+}
+
+// Placeholder
+interface ImageIUI : UI {
+  var image: Image
+}
+
 
 interface ActionUI : UI {
-    val enabled : Boolean
-    val onFired : (source: ActionUI) -> Unit
+  val label: String
+  val enabled: Boolean
+  val onFired: (source: ActionUI) -> Unit
 }
+
 
 interface ActionGroupUI : UI {
   val actions: MutableList<ActionUI>
 }
 
-
 sealed class ValidState(val msg: String = "") {
-    object OK : ValidState()
-    class Warning(msg: String) : ValidState(msg)
-    class Error(msg: String) : ValidState(msg)
+  object OK : ValidState()
+  class Warning(msg: String) : ValidState(msg)
+  class Error(msg: String) : ValidState(msg)
 }
 
+data class UIState<T>(
+    val value: T,
+    val isReadOnly: Boolean = false,
+    val validState: ValidState = ValidState.OK,
+    val hasFocus: Boolean = false
+)
 
-data class UIState<T> (
-        val value: T?,
-        val isReadOnly: Boolean = false,
-        val validState: ValidState = ValidState.OK,
-        val hasFocus: Boolean = false
-
-        )
-
-interface EntityEditorUI {
-
+/**
+ *
+ */
+interface ContainerUI {
+  fun textFieldEditorUI(name: String): TextFieldEditorUI
+  fun longFieldEditorUI(name: String): LongFieldEditorUI
+  fun fieldListUI(name: String): ListEditorUI
+  fun containerUI(name: String): ContainerUI
+  fun actionUI(name: String): ActionUI
+  fun labelUI(name: String): LabelUI
+  fun actionGroupUI(name: String): ActionGroupUI
 }
 
+interface WindowUI {
+  val mainContainer: ContainerUI
+}
 
-
+/**
+ *
+ */
 interface AppUI {
-
-  val actions: MutableList<ActionUI>
-
-
 
 }
 
