@@ -1,6 +1,7 @@
 package simplerserverapp
 
 import meta.intFieldMeta
+import validators.Validator
 import validators.notEmptyString
 
 /**
@@ -10,25 +11,25 @@ object dd {
   val uuid = meta.stringFieldMeta(
       name = "uuid",
       description = "uuid desc",
-      validator = ::notEmptyString
+      validator = notEmptyString
   )
 
   val firstName = meta.stringFieldMeta(
       name = "firstName",
       description = "firstName desc",
-      validator = ::notEmptyString
+      validator = notEmptyString
   )
 
   val surname = meta.stringFieldMeta(
       name = "surname",
       description = "surname desc",
-      validator = ::notEmptyString
+      validator = notEmptyString
   )
 
 
   val age = intFieldMeta(
       name = "age",
       description = "age desc",
-      validator = { if (it > 0) null else "must be positive" }
+      validator = Validator("Must be a positive")  { it > 0}
   )
 }
