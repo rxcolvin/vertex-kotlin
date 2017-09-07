@@ -4,6 +4,8 @@
 package meta
 
 import logging.Logger
+import validators.Validator
+import validators.nullValidator
 
 
 // The logger for this module set to a default value: generally should be reset.
@@ -34,7 +36,7 @@ data class Type<T>(
     val name: String,
     val fromString: (String) -> T,
     val toString: (T) -> String,
-    val stringValidator: (String) -> String? = { null },
+    val stringValidator: Validator<String>,
     val json: JSON<T, out Any>
 )
 
@@ -43,7 +45,7 @@ val stringType = Type<String>(
     name = "string",
     fromString = { it },
     toString = { it },
-    stringValidator = { null },
+    stringValidator = nullValidator(),
     json = JSONString<String>(
         fromJSON = { it },
         toJSON = { it }
@@ -54,7 +56,7 @@ val intType = Type<Int>(
     name = "int",
     fromString = { it.toInt() },
     toString = { it.toString() },
-    stringValidator = { if (it.toIntOrNull() != null) null else "Not a number" },
+    stringValidator = Validator("Not a number"){ it.toIntOrNull() != null},
     json = JSONNumber<Int>(
         fromJSON = { it as Int }, //TODO
         toJSON = { it }
@@ -73,35 +75,35 @@ data class FieldMeta<T>(
     val name: String,
     val type: Type<T>,
     val description: String,
-    val validate: (T) -> String? = { null }
+    val validator: Validator<T>
 ) {
   /**
    *
    */
-  fun validateAny(t: Any) = validate(t as T)
+//  fun validateAny(t: Any) = validate(t as T)
 }
 
 
 fun stringFieldMeta(
     name: String,
     description: String,
-    validator: (String) -> String? = { null }
+    validator: Validator<String>
 ) = FieldMeta<String>(
     name = name,
     description = description,
     type = stringType,
-    validate = validator
+    validator = validator
 )
 
 fun intFieldMeta(
     name: String,
     description: String,
-    validator: (Int) -> String? = { null }
+    validator: Validator<Int>
 ) = FieldMeta<Int>(
     name = name,
     description = description,
     type = intType,
-    validate = validator
+    validator = validator
 )
 
 

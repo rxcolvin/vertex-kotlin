@@ -1,5 +1,16 @@
 package validators
 
+data class Validator<T> (
+    val msg: String,
+    val test: (T) -> Boolean
+)
+
+val nullValidator_ = Validator<Any>("") {true}
+
+fun <T> nullValidator() = nullValidator_ as T
+
+val notEmptyString = Validator<String>("Value is empty", String::isNotBlank)
+
 fun <T: Enum<T>> isInEnum(v:String, values: Array<T>) : String? =
         if (v in values.map {it.name}) null else "Must be one of " + values
 
