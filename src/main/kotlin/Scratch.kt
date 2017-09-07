@@ -5,7 +5,7 @@ import uimodel.FieldEditorUI
 import uimodel.UIState
 import validators.notEmptyString
 import kotlin.reflect.KClass
-import kotlin.reflect.full.safeCast
+
 
 /**
  * Created by richard.colvin on 12/04/2017.

@@ -23,9 +23,10 @@ interface UI {
   val name: String
 }
 
+
 interface FieldEditorUI<T> : UI {
   var uiState: UIState<T>
-  var onUpdate: (String) -> UIState<T>
+  var updateListener: (String) -> UIState<T>
 }
 
 interface TextFieldEditorUI : FieldEditorUI<String> {
@@ -78,7 +79,7 @@ sealed class ValidState(val msg: String = "") {
 }
 
 data class UIState<T>(
-    val value: T,
+    val value: T? = null,
     val isReadOnly: Boolean = false,
     val validState: ValidState = ValidState.OK,
     val hasFocus: Boolean = false
