@@ -9,7 +9,8 @@ val nullValidator_ = Validator<Any>("") {true}
 
 fun <T> nullValidator() = nullValidator_ as T
 
-val notEmptyString = Validator<String>("Value is empty", String::isNotBlank)
+val notEmptyString = Validator<String>("must be not empty", String::isNotBlank)
+val positiveInt = Validator<Int>("must be > 0", {it > 0})
 
 fun <T: Enum<T>> isInEnum(v:String, values: Array<T>) : String? =
         if (v in values.map {it.name}) null else "Must be one of " + values

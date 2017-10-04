@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonObject
 import meta.intFieldMeta
 import meta.stringFieldMeta
 import validators.notEmptyString
+import validators.positiveInt
 import java.math.BigDecimal
 
 /**
@@ -17,13 +18,13 @@ object dd {
   val name = stringFieldMeta(
       name = "name",
       description = "name desc",
-      validator = ::notEmptyString
+      validator = notEmptyString
   )
 
   val age = intFieldMeta(
       name = "age",
       description = "age desc",
-      validator = { if (it > 0) null else "must be positive" }
+      validator = positiveInt
   )
 }
 
@@ -78,8 +79,8 @@ object fooMeta {
     val foo = fooMeta.em.builder2Entity(foo_)
     val foo2_ = fooMeta.em.entity2Builder(foo)
 
-    println(fooMeta.fields.age.fieldMeta.type.stringValidator("_f"))
-    println(fooMeta.em.entityMetaFieldMap["age"]!!.fieldMeta.validateAny(23))
+//    println(fooMeta.fields.age.fieldMeta.type.stringValidator("_f"))
+//    println(fooMeta.em.entityMetaFieldMap["age"]!!.fieldMeta.validateAny(23))
 
     fooMeta.em.entityMetaFieldMap["age"]!!.setAny(foo2_, 23)
 

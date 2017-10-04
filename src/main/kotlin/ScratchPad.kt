@@ -89,10 +89,10 @@ fun encode(test: Any): String {
 //  }
 
 
-fun parse(t: String): Any = parse(peekingIterator(t))
+fun parse(t: String): Any = parse(ParserHelper(t))
 
-fun parse(k: PeekingIterator<Char>): Any {
-  skipWS(k)
+fun parse(k: ParserHelper): Any {
+  k.skipWS()
   val c = k.peek()
   return when {
     c == '"' -> parseString(k)
@@ -105,8 +105,8 @@ fun parse(k: PeekingIterator<Char>): Any {
 
 enum class State { TYPE, PARAMS, OPEN }
 
-fun parseId(k: PeekingIterator<Char>): String {
-  skipWS(k)
+fun parseId(k: ParserHelper): String {
+  k.skipWS()
   val b = StringBuilder()
   var done = false
   var isId = false
@@ -137,8 +137,8 @@ fun parseId(k: PeekingIterator<Char>): String {
 }
 
 
-fun parseExpr(k: PeekingIterator<Char>): Expr {
-  skipWS(k)
+fun parseExpr(k: ParserHelper): Expr {
+  k.skipWS()
 
   var state = State.TYPE
   val key = StringBuffer()
@@ -154,7 +154,7 @@ fun parseExpr(k: PeekingIterator<Char>): Expr {
           key.append(c)
           k.consume()
         } else {
-          skipWS(k)
+          k.skipWS()
           state = State.OPEN
         }
       }
@@ -167,7 +167,7 @@ fun parseExpr(k: PeekingIterator<Char>): Expr {
         }
       }
       State.PARAMS -> {
-        skipWS(k)
+        k.skipWS()
         val c = k.peek()
         if (c == ',') {
           k.consume()
@@ -200,10 +200,10 @@ fun makeConstMaybe(v: Any): Value<Any> = when (v) {
 }
 
 
-fun parseString(k: PeekingIterator<Char>): String {
+fun parseString(k: ParserHelper): String {
   var started = false
   val b = StringBuilder()
-  skipWS(k)
+  k.skipWS()
   var done = false
   while (k.hasNext() && !done) {
     val c = k.next()
@@ -224,8 +224,8 @@ fun parseString(k: PeekingIterator<Char>): String {
   return b.toString()
 }
 
-fun parseNumber(k: PeekingIterator<Char>): Number {
-  skipWS(k)
+fun parseNumber(k: ParserHelper): Number {
+  k.skipWS()
   var sign = 1
   val b = StringBuilder()
   var done = false
@@ -261,9 +261,7 @@ fun parseNumber(k: PeekingIterator<Char>): Number {
 }
 
 
-fun skipWS(k: PeekingIterator<Char>) {
-  while (k.hasNext() && k.peek().isWhitespace()) k.consume()
-}
+
 
 
 fun main(args: Array<String>) {
@@ -279,10 +277,10 @@ fun main(args: Array<String>) {
   val t = """
     Eq(Const(10), Field("foo")), Eq(Const(25), Field("bar"))
     """
-  println(parseExpr(peekingIterator("And(Eq(\"Foo\", Field(\"bar\")))")))
-  println(parseExpr(peekingIterator("Const(10)")))
+  println(parseExpr(ParserHelper("And(Eq(\"Foo\", Field(\"bar\")))")))
+  println(parseExpr(ParserHelper("Const(10)")))
 
-  println(parseString(peekingIterator("\"Hello\"")))
+  println(parseString(ParserHelper("\"Hello\"")))
   val test = And(
       listOf(
           Eq(Const(10), Field("foo")), Eq(Const(25), Field("bar"))
@@ -295,43 +293,41 @@ fun main(args: Array<String>) {
 
 }
 
-/**
- * Why don;t all iterators just have a peek!!!!!
- */
-interface PeekingIterator<T> : Iterator<T> {
-  fun peek(): T
-  fun consume()
-}
+
 
 /**
  * Naf-ish implementation
  *
  * Not Threadsafe
  */
-class PeekingItertatorImpl<T>(val k: Iterator<T>) : PeekingIterator<T> {
-  var peek: T? = if (k.hasNext()) k.next() else null
+class ParserHelper(stream: CharSequence) {
+  val k: Iterator<Char> = stream.iterator()
 
-  override fun peek(): T {
+  var peek: Char? = if (k.hasNext()) k.next() else null
+
+  fun peek(): Char {
     return peek!!
   }
 
-  override fun hasNext(): Boolean =
+  fun hasNext(): Boolean =
       peek != null
 
 
-  override fun next(): T {
+  fun next(): Char {
     val ret = peek!!
     peek = if (k.hasNext()) k.next() else null
     return ret
   }
 
-  override fun consume() {
+  fun consume() {
     next()
+  }
+
+  fun skipWS() {
+    while (this.hasNext() && this.peek().isWhitespace()) this.consume()
   }
 }
 
-fun peekingIterator(text: String): PeekingIterator<Char> {
-  return PeekingItertatorImpl<Char>(text.iterator())
-}
+
 
 
