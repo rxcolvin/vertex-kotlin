@@ -9,7 +9,8 @@ enum class Action {
  */
 data class Request(
     val action: Action,
-    val path: List<String>
+    val path: Array<String>,
+    val params: Map<String, Array<String>>
 )
 
 /**

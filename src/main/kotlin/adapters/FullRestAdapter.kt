@@ -25,7 +25,7 @@ class FullRestAdapter<C, T, ID>(
   ) : Handler.NoBody<Response> {
     override fun invoke(): Response {
       val id = string2Id(request.path[1])
-      val t = dataManager.id(id).onError { throw it }.toBlocking().first()
+      val t = dataManager.id(id)
       return Response(
           content = asset2String(t)
       )
@@ -38,7 +38,7 @@ class FullRestAdapter<C, T, ID>(
 
 
     override fun invoke(text: String): Response {
-      val t = dataManager.insert(string2Asset(text)).onError { throw it }.toBlocking().first()
+      val t = dataManager.insert(string2Asset(text))
       return Response(
           content = asset2String(t)
       )

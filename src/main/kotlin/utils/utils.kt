@@ -1,7 +1,10 @@
 package utils
 
 //import entitymeta.EntityMeta
+import io.vertx.core.MultiMap
 import java.io.File
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.*
 import kotlin.collections.*
 import kotlin.reflect.KClass
@@ -220,3 +223,32 @@ inline fun <reified FROM : Any, reified TO> convert(from: FROM): TO {
     return TO::class.constructors.first().callBy(params)
 
 }
+
+//Converts some object into another one.
+fun <T, R> T.into(f: T.() -> R) = f(this)
+
+
+
+data class TimeIt<R> (
+    val duration: Long,
+    val result: R?,
+    val exception: Throwable?
+)
+
+fun <R> timeIt(f: () -> R) : TimeIt<R> {
+
+  val time = LocalDateTime.now()
+  try {
+
+    val res = f()
+    return TimeIt(ChronoUnit.MILLIS.between(time, LocalDateTime.now()), res, null)
+  } catch (t: Throwable) {
+    return TimeIt(ChronoUnit.MILLIS.between(time, LocalDateTime.now()), null, t)
+
+  }
+}
+
+fun MultiMap.asString() =
+    this.names().joinToString(separator = "\n") {
+      " " + it + "=" + this.getAll(it).joinToString()
+    }

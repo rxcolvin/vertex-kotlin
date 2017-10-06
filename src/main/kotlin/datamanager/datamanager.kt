@@ -1,6 +1,5 @@
 package datamanager
 
-import rx.Observable
 
 // -- data manager
 interface QueryDef {
@@ -11,11 +10,26 @@ data class IdQueryDef<ID>(
     val id: ID
 ) : QueryDef
 
+object QueryAll : QueryDef
+
+interface Sort {
+  val isAscending: Boolean;
+  val fields:Array<String>
+}
+
+object unordered : Sort {
+  override val isAscending: Boolean = true
+  override val fields: Array<String> = emptyArray()
+}
+//rx versions
 
 interface DataQuery<T, ID> {
-  fun query(queryDef: QueryDef): Observable<T>
-  fun queryOne(queryDef: QueryDef): Observable<T>
-  fun id(id: ID): Observable<T> = queryOne(IdQueryDef<ID>(id))
+  fun query(
+      queryDef: QueryDef,
+      sort: Sort = unordered
+  ): Sequence<T>
+  fun queryOne(queryDef: QueryDef): T
+  fun id(id: ID): T = queryOne(IdQueryDef<ID>(id))
 }
 
 interface Subscription<T, ID> {
@@ -30,9 +44,10 @@ interface DataSubscription<T, ID> {
 }
 
 interface DataManager<T, ID> : DataQuery<T, ID> {
-  fun insert(t: T): Observable<T>
-  fun update(id: ID, t: T): Observable<T>
-  fun delete(id: ID): Observable<ID>
+  fun insert(t: T): T
+  fun update(id: ID, t: T): T
+  fun delete(id: ID): ID
 }
+
 
 //- Data Manager shit

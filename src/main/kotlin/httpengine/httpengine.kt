@@ -1,5 +1,7 @@
 package httpengine
 
+import java.util.concurrent.CompletableFuture
+
 
 interface Handler<RESP> {
 
@@ -19,6 +21,22 @@ interface Handler<RESP> {
 }
 
 
+interface AsyncHandler<RESP> {
+
+  interface NoBody<RESP> : AsyncHandler <RESP> {
+    fun invoke(): CompletableFuture<RESP>
+  }
+
+  interface Body<RESP> : AsyncHandler <RESP> {
+    fun invoke(text: String): CompletableFuture<RESP>
+  }
+
+  interface StreamBody<RESP> : AsyncHandler <RESP> {
+    fun invoke(stream: Iterator<String>): CompletableFuture<RESP>
+  }
+
+  //+ Others?? (Form?)
+}
 
 
 
