@@ -1,22 +1,7 @@
 package testmeta
 
 import io.vertx.core.json.JsonObject
-import meta.ComplexField
-import meta.ComplexType
-import meta.EntityField
-import meta.EntityMeta
-import meta.FieldHolder
-import meta.Fields
-import meta.JsonComplexMapper
-import meta.JsonEntityParser
-import meta.JsonMeta
-import meta.ListField
-import meta.fromJsonMap
-import meta.intField
-import meta.jsonIntMapper
-import meta.jsonStringMapper
-import meta.stringField
-import meta.toJsonMap
+import meta.*
 import validators.Validator
 import validators.notEmptyString
 
@@ -58,13 +43,15 @@ object dd {
 data class Foo(
     val name: String,
     val age: Int,
-    val bar: Bar
+    val bar: Bar,
+    val bars: List<Bar>
 )
 
 data class Foo_(
     var name: String?,
     var age: Int?,
-    var bar: Bar?
+    var bar: Bar_?,
+    var bars: MutableList<Bar_>?
 )
 
 data class Bar(
@@ -82,8 +69,7 @@ object fooMeta {
   open class FooFields<FH : FieldHolder<*, *>>(
       val name: FH,
       val age: FH,
-      val bar: FH//,
-      //val bars: FH
+      val bar: FH
   ) : Fields<FH> {
     override val all_ = listOf<FH>(name, age, bar)
   }
@@ -109,12 +95,12 @@ object fooMeta {
       set_ = Foo_::bar::set
   )
 
-//  val bars = EntityField(
-//      field = dd.bars,
-//      get = Foo::bars::get,
-//      get_ = Foo_::bars::get,
-//      set_ = Foo_::bars::set
-//  )
+  val bars = EntityField(
+      field = dd.bars,
+      get = Foo::bars::get,
+      get_ = Foo_::bars::get,
+      set_ = Foo_::bars::set
+  )
 
 
   val em = EntityMeta<Foo, Foo_>(
@@ -124,42 +110,43 @@ object fooMeta {
           age = age,
           bar = bar
       ),
-      builderFactory = { Foo_(null, null, bar = null) },
+      builderFactory = { Foo_(null, null, bar = null, bars = null) },
       builder2Entity = {
         Foo(
             it.name!!,
             it.age!!,
             Bar(
-                location = it.bar!!.location
+                location = it.bar!!.location!!
             )
-//            ,
-//            it.bars!!.map { Bar(it.location!!)}
+            ,
+            it.bars!!.map { Bar(it.location!!)}
         )
       },
       entity2Builder = {
         Foo_(
-            it.name,
-            it.age,
-            it.bar
+            name = it.name,
+            age = it.age,
+            bar = Bar_(it.bar.location),
+            bars = it.bars.map{Bar_(
+                location = it.location
+            )}.toMutableList()
         )
       }
   )
 
 
-  val jm = JsonMeta(
+  val jm = JsonMeta<Foo, Foo_>(
       name = "foo",
       fields = FooFields(
           name = jsonStringMapper(name),
           age = jsonIntMapper(age),
-          bar = JsonComplexMapper(
+          bar = JsonComplexFieldMapper<Foo, Foo_, Bar, Bar_>(
               entityField = bar,
-              toJson = { toJsonMap(barMeta.jm, it) },
-              fromJson = { fromJsonMap(barMeta.jm, barMeta.em, it) }
+              jsonEntityMapper = barMeta.jsonFM
+
           )
       )
   )
-
-
 }
 
 object barMeta {
@@ -206,6 +193,12 @@ object barMeta {
       )
   )
 
+  val jsonFM = JsonEntityMapper<Bar, Bar_> (
+      entityMeta = em,
+      jsonMeta = jm
+
+
+  )
 
 }
 
@@ -215,11 +208,11 @@ fun main(args: Array<String>) {
       name = "Joe",
       age = 101,
       bar = Bar("Fly")
-//      ,
-//      bars = listOf(
-//          Bar("Place 1"),
-//          Bar("Place 2")
-//      )
+      ,
+      bars = listOf(
+          Bar("Place 1"),
+          Bar("Place 2")
+      )
   )
 
 
@@ -238,8 +231,15 @@ fun main(args: Array<String>) {
         | "age" : 12,
         | "bar" : {
         |  "location": "High"
-        |  }
-        | }
+        |  },
+        |  "bars" : [
+        |  {
+        |       "location" : "Hsdsds"
+        |  } ,
+        |  {
+        |       "location" : "sdasd"
+        |  ]
+         | }
     """.trimMargin())
 
   println(foo2)
