@@ -69,9 +69,10 @@ object fooMeta {
   open class FooFields<FH : FieldHolder<*, *>>(
       val name: FH,
       val age: FH,
-      val bar: FH
+      val bar: FH,
+      val bars: FH
   ) : Fields<FH> {
-    override val all_ = listOf<FH>(name, age, bar)
+    override val all_ = listOf<FH>(name, age, bar, bars)
   }
 
   val name = EntityField(
@@ -108,7 +109,8 @@ object fooMeta {
       fields = FooFields(
           name = name,
           age = age,
-          bar = bar
+          bar = bar,
+          bars = bars
       ),
       builderFactory = { Foo_(null, null, bar = null, bars = null) },
       builder2Entity = {
@@ -144,6 +146,10 @@ object fooMeta {
               entityField = bar,
               jsonEntityMapper = barMeta.jsonFM
 
+          ),
+          bars = JsonInvariantComplexListFieldMapper(
+              entityField = bars,
+              json
           )
       )
   )
