@@ -1,16 +1,16 @@
 package datamanager
 
+import kotlin.reflect.KClass
+
 
 // -- data manager
-interface QueryDef {
+interface QueryDef<T>
 
-}
-
-data class IdQueryDef<ID>(
+data class IdQueryDef<ID, T: Any>(
     val id: ID
-) : QueryDef
+) : QueryDef<T>
 
-object QueryAll : QueryDef
+class QueryAll<T: Any> : QueryDef<T>
 
 interface Sort {
   val isAscending: Boolean;
@@ -23,30 +23,39 @@ object unordered : Sort {
 }
 //rx versions
 
-interface DataQuery<T, ID> {
-  fun query(
-      queryDef: QueryDef,
+interface DataQuery {
+  fun <T: Any> query(
+      queryDef: QueryDef<T>,
       sort: Sort = unordered
   ): Sequence<T>
-  fun queryOne(queryDef: QueryDef): T
-  fun id(id: ID): T = queryOne(IdQueryDef<ID>(id))
+  fun <T: Any> queryOne(queryDef: QueryDef<T>): T
+  fun <T: Any, ID> id(id: ID, klass: KClass<T>): T = queryOne(IdQueryDef<ID, T>(id))
 }
 
-interface Subscription<T, ID> {
-  val queryDef: QueryDef
+interface Subscription<T: Any, in ID> {
+  val queryDef: QueryDef<T>
   val onUpdate: (id: ID, t: T) -> Unit
   val onRemoved: (ID) -> Unit
   val onInserted: (id: ID, t: T) -> Unit
 }
 
-interface DataSubscription<T, ID> {
-  fun subscribe(query: QueryDef): Subscription<T, ID>
+interface DataSubscription {
+  fun <T: Any, ID> subscribe(query: QueryDef<T>): Subscription<T, ID>
 }
 
-interface DataManager<T, ID> : DataQuery<T, ID> {
-  fun insert(t: T): T
-  fun update(id: ID, t: T): T
-  fun delete(id: ID): ID
+interface DataManager : DataQuery {
+  fun <T: Any, ID> insert(id:ID, t: T): T
+  fun <T: Any, ID> update(id: ID, t: T): T
+  fun <T: Any, ID> delete(id: ID, kclass: KClass<T>): ID
+}
+
+/**
+ *
+ */
+interface DataManager2 : DataQuery {
+  fun <T: Any, ID> insert(t: T): T
+  fun <T: Any, ID> update(id: ID, t: T): T
+  fun <T: Any, ID> delete(id: ID, kclass: KClass<T>): ID
 }
 
 

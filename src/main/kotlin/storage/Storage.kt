@@ -1,10 +1,11 @@
 package storage
 
+import kotlin.reflect.KClass
 
-interface Storage<T, ID> {
-  fun put(id: ID, data: T)
-  fun remove(id: ID)
 
-  fun getAll() : Map<ID, T>
+interface Storage {
+  fun <T: Any, ID> put(id: ID, data: T)
+  fun <ID> remove(id: ID)
+  fun <T: Any, ID> getAll(klass: KClass<T>) : Map<ID, T>
 }
 

@@ -1,9 +1,11 @@
 package asynchdatamanageradapter
 
 import asynchdatamanager.AsyncDataManager
+import com.sun.xml.internal.bind.v2.model.core.ID
 import datamanager.QueryDef
 import datamanager.Sort
 import java.util.concurrent.CompletableFuture
+import kotlin.reflect.KClass
 import datamanager.DataManager as SynchDataManager
 
 /**
@@ -13,42 +15,45 @@ import datamanager.DataManager as SynchDataManager
  * Converts a synchronous AsyncDataManager into an Async version by applying
  * a strategy to create CompletableFutures
  */
-class AsyncDataManagerAdapter<T, ID>(
-    val synchDataManager: SynchDataManager<T, ID>,
+class AsyncDataManagerAdapter(
+    val synchDataManager: SynchDataManager,
     val cfFactory: (()->Any) -> CompletableFuture<Any>
 
-) : AsyncDataManager<T, ID> {
-  override fun query(
-      queryDef: QueryDef,
+) : AsyncDataManager {
+  override fun <T: Any> query(
+      queryDef: QueryDef<T>,
       sort: Sort
   ): CompletableFuture<Sequence<T>> =
       async {
         synchDataManager.query(queryDef, sort)
       }
 
-  override fun queryOne(queryDef: QueryDef): CompletableFuture<T> =
+  override fun <T: Any> queryOne(queryDef: QueryDef<T>): CompletableFuture<T> =
       async {
         synchDataManager.queryOne(queryDef)
       }
 
-  override fun insert(t: T): CompletableFuture<T> =
+  override  fun <T: Any> insert(t: T): CompletableFuture<T> =
       async {
         synchDataManager.insert(t)
       }
 
-  override fun update(id: ID, t: T): CompletableFuture<T> =
+  override fun <T:Any , ID> update(id: ID, t: T): CompletableFuture<T> =
       async {
         synchDataManager.update(id, t)
       }
 
-  override fun delete(id: ID): CompletableFuture<ID> =
+  override fun <T: Any, ID> delete(
+      id: ID,
+      klass: KClass<T>
+  ): CompletableFuture<ID> =
       async{
-        synchDataManager.delete(id)
+        synchDataManager.delete(id, klass)
       }
 
-  override fun id(id: ID): CompletableFuture<T> =
+  override fun <T: Any, ID> id(id: ID, klass: KClass<T>): CompletableFuture<T> =
     async{
-      synchDataManager.id(id)
+      synchDataManager.id(id, klass)
     }
 
 

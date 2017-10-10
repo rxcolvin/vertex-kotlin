@@ -1,5 +1,6 @@
 package inmemorydatamanager
 
+import com.sun.xml.internal.bind.v2.model.core.ID
 import datamanager.DataManager
 import datamanager.QueryAll
 import datamanager.QueryDef
@@ -7,20 +8,20 @@ import datamanager.Sort
 import logging.Logger
 import storage.Storage
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KClass
 
 /**
  * A AsyncDataManager that stores things in Memory
  */
-class InMemoryDataManager<T, ID>(
-    val keyFunc: (T) -> ID,
+class InMemoryDataManager(
     val logger: Logger = Logger("InMemoryDataManager_Default", debugEnabled = true),
-    val storage: Storage<T, ID>,
+    val storage: Storage,
     val latencyEmulation: (() -> Long)? = null
-) : DataManager<T, ID> {
-  val store = ConcurrentHashMap<ID, T>(storage.getAll())
+) : DataManager {
+  val store = ConcurrentHashMap<KClass<*>, ConcurrentHashMap<*,*>>()
 
-  override fun query(
-      queryDef: QueryDef,
+  override fun <T: Any> query(
+      queryDef: QueryDef<T>,
       sort: Sort
   ): Sequence<T> {
     if (queryDef is QueryAll) {
@@ -29,7 +30,7 @@ class InMemoryDataManager<T, ID>(
     throw RuntimeException("QueryDef Not Found: ${queryDef}")
   }
 
-  override fun id(id: ID): T {
+  override fun <T: Any> id(id: ID): T {
     latencyEmulation?.let {
       val millis = it()
       logger.debug { "LatencyEmulation for $millis ms on Thread: ${Thread.currentThread()}" }
@@ -42,11 +43,11 @@ class InMemoryDataManager<T, ID>(
     throw  RuntimeException("Not Found: $id")
   }
 
-  override fun queryOne(queryDef: QueryDef): T {
+  override fun <T: Any> queryOne(queryDef: QueryDef<T>): T {
     throw RuntimeException("TODO")
   }
 
-  override fun insert(t: T): T {
+  override fun <T:Any> insert(t: T): T {
     val key = keyFunc(t)
     store[key] = t
     storage.put(key, t)
