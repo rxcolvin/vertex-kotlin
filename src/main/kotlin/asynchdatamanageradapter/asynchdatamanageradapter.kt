@@ -1,9 +1,11 @@
 package asynchdatamanageradapter
 
 import asynchdatamanager.AsyncDataManager
+import asynchdatamanager.TypedAsyncDataManager
 import com.sun.xml.internal.bind.v2.model.core.ID
 import datamanager.QueryDef
 import datamanager.Sort
+import datamanager.TypedDataManager
 import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
 import datamanager.DataManager as SynchDataManager
@@ -15,12 +17,12 @@ import datamanager.DataManager as SynchDataManager
  * Converts a synchronous AsyncDataManager into an Async version by applying
  * a strategy to create CompletableFutures
  */
-class AsyncDataManagerAdapter(
-    val synchDataManager: SynchDataManager,
+class TypedAsyncDataManagerAdapter<T:Any, ID>(
+    val synchDataManager: TypedDataManager<T, ID>,
     val cfFactory: (()->Any) -> CompletableFuture<Any>
 
-) : AsyncDataManager {
-  override fun <T: Any> query(
+) : TypedAsyncDataManager<T, ID> {
+  override fun  query(
       queryDef: QueryDef<T>,
       sort: Sort
   ): CompletableFuture<Sequence<T>> =
@@ -28,33 +30,28 @@ class AsyncDataManagerAdapter(
         synchDataManager.query(queryDef, sort)
       }
 
-  override fun <T: Any> queryOne(queryDef: QueryDef<T>): CompletableFuture<T> =
+  override fun queryOne(queryDef: QueryDef<T>): CompletableFuture<T> =
       async {
         synchDataManager.queryOne(queryDef)
       }
 
-  override  fun <T: Any> insert(t: T): CompletableFuture<T> =
+  override  fun insert(id: ID, t: T): CompletableFuture<T> =
       async {
-        synchDataManager.insert(t)
+        synchDataManager.insert(id, t)
       }
 
-  override fun <T:Any , ID> update(id: ID, t: T): CompletableFuture<T> =
+  override fun update(id: ID, t: T): CompletableFuture<T> =
       async {
         synchDataManager.update(id, t)
       }
 
-  override fun <T: Any, ID> delete(
-      id: ID,
-      klass: KClass<T>
+  override fun  delete(
+      id: ID
   ): CompletableFuture<ID> =
       async{
-        synchDataManager.delete(id, klass)
+        synchDataManager.delete(id)
       }
 
-  override fun <T: Any, ID> id(id: ID, klass: KClass<T>): CompletableFuture<T> =
-    async{
-      synchDataManager.id(id, klass)
-    }
 
 
   private fun <X> async(f:()->X) : CompletableFuture<X> =

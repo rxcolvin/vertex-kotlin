@@ -38,41 +38,73 @@ object dd {
       description = "bars desc"
   )
 
+  val cheeses = ListField<AtomicType<String>> (
+      type = AtomicType<String>(String::class),
+      name = "cheeses",
+      description = "cheeses desc"
+  )
+
+  val hostelry = UnionField (
+      type = UnionType(
+          name = "hostelries",
+          types = listOf(barMeta.barType)
+
+      ),
+      name = "hostelry",
+      description = "hostelry desc"
+  )
+
+
 }
 
 data class Foo(
     val name: String,
     val age: Int,
     val bar: Bar,
-    val bars: List<Bar>
+    val bars: List<Bar>,
+    val cheeses: List<String>,
+    val hostelry: Hostelry
 )
 
 data class Foo_(
     var name: String?,
     var age: Int?,
     var bar: Bar_?,
-    var bars: MutableList<Bar_>?
+    var bars: MutableList<Bar_>?,
+    var cheeses: MutableList<String>?,
+    var hostelry: Hostelry_?
+
 )
+
+interface Hostelry
+interface Hostelry_
 
 data class Bar(
     val location: String
-)
+) : Hostelry
 
 data class Bar_(
     var location:String?
-)
+) : Hostelry_
 
+data class Pub (
+    val name: String
+) : Hostelry
 
-
+data class Pub_ (
+    var name: String?
+) : Hostelry_
 
 object fooMeta {
   open class FooFields<FH : FieldHolder<*, *>>(
       val name: FH,
       val age: FH,
       val bar: FH,
-      val bars: FH
+      val bars: FH,
+      val cheeses: FH,
+      val hostelry: FH
   ) : Fields<FH> {
-    override val all_ = listOf<FH>(name, age, bar, bars)
+    override val all_ = listOf<FH>(name, age, bar, bars, cheeses, hostelry)
   }
 
   val name = EntityField(
@@ -103,6 +135,20 @@ object fooMeta {
       set_ = Foo_::bars::set
   )
 
+  val cheeses = EntityField(
+      field = dd.cheeses,
+      get = Foo::cheeses::get,
+      get_ = Foo_::cheeses::get,
+      set_ = Foo_::cheeses::set
+  )
+
+  val hostelry = EntityField(
+      field = dd.hostelry,
+      get = Foo::hostelry::get,
+      get_ = Foo_::hostelry::get,
+      set_ = Foo_::hostelry::set
+  )
+
 
   val em = EntityMeta<Foo, Foo_>(
       name = "Foo",
@@ -110,9 +156,11 @@ object fooMeta {
           name = name,
           age = age,
           bar = bar,
-          bars = bars
+          bars = bars,
+          cheeses = cheeses,
+          hostelry = hostelry
       ),
-      builderFactory = { Foo_(null, null, bar = null, bars = null) },
+      builderFactory = { Foo_(null, null, bar = null, bars = null, cheeses = null, hostelry = null) },
       builder2Entity = {
         Foo(
             it.name!!,
@@ -121,7 +169,9 @@ object fooMeta {
                 location = it.bar!!.location!!
             )
             ,
-            it.bars!!.map { Bar(it.location!!)}
+            it.bars!!.map { Bar(it.location!!)},
+            it.cheeses!!.toList(),
+            Hostelry(it.name) //O Farkit
         )
       },
       entity2Builder = {
@@ -131,7 +181,8 @@ object fooMeta {
             bar = Bar_(it.bar.location),
             bars = it.bars.map{Bar_(
                 location = it.location
-            )}.toMutableList()
+            )}.toMutableList(),
+            cheeses = it.cheeses.toMutableList()
         )
       }
   )
@@ -140,16 +191,20 @@ object fooMeta {
   val jm = JsonMeta<Foo, Foo_>(
       name = "foo",
       fields = FooFields(
-          name = jsonStringMapper(name),
-          age = jsonIntMapper(age),
-          bar = JsonComplexFieldMapper<Foo, Foo_, Bar, Bar_>(
+          name = jsonStringFieldMapper(name),
+          age = jsonIntFieldMapper(age),
+          bar = JsonInvariantComplexFieldMapper(
               entityField = bar,
               jsonEntityMapper = barMeta.jsonFM
 
           ),
           bars = JsonInvariantComplexListFieldMapper(
               entityField = bars,
-              json
+              jsonEntityMapper = barMeta.jsonFM
+          ),
+          cheeses = JsonInvariantAtomicListFieldMapper (
+              entityField = cheeses,
+              jsonMapper = jsonStringMapper
           )
       )
   )
@@ -195,16 +250,14 @@ object barMeta {
   val jm = JsonMeta<Bar, Bar_>(
       name = "bar",
       fields = BarFields(
-          location = jsonStringMapper(location)
+          location = jsonStringFieldMapper(location)
       )
   )
 
   val jsonFM = JsonEntityMapper<Bar, Bar_> (
       entityMeta = em,
       jsonMeta = jm
-
-
-  )
+ )
 
 }
 
@@ -218,7 +271,8 @@ fun main(args: Array<String>) {
       bars = listOf(
           Bar("Place 1"),
           Bar("Place 2")
-      )
+      ),
+      cheeses = listOf("Cheddar", "Edam")
   )
 
 
@@ -244,7 +298,9 @@ fun main(args: Array<String>) {
         |  } ,
         |  {
         |       "location" : "sdasd"
-        |  ]
+        |  }
+        |  ],
+        |  "cheeses" : ["Dairy-Lee", "Brie", "Stilton"]
          | }
     """.trimMargin())
 

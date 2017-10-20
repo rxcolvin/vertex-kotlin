@@ -1,0 +1,12 @@
+{
+  "name" : "Joe",
+  "age" : 101,
+  "bar" : {
+    "location" : "Fly"
+  },
+  "bars" : [ {
+    "location" : "Place 1"
+  }, {
+    "location" : "Place 2"
+  } ]
+}

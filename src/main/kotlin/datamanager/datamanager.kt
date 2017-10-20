@@ -49,14 +49,24 @@ interface DataManager : DataQuery {
   fun <T: Any, ID> delete(id: ID, kclass: KClass<T>): ID
 }
 
-/**
- *
- */
-interface DataManager2 : DataQuery {
-  fun <T: Any, ID> insert(t: T): T
-  fun <T: Any, ID> update(id: ID, t: T): T
-  fun <T: Any, ID> delete(id: ID, kclass: KClass<T>): ID
+
+
+
+interface TypedDataQuery<T: Any, ID> {
+  fun  query(
+      queryDef: QueryDef<T>,
+      sort: Sort = unordered
+  ): Sequence<T>
+  fun  queryOne(queryDef: QueryDef<T>): T
+  fun  id(id: ID): T = queryOne(IdQueryDef<ID, T>(id))
 }
+
+interface TypedDataManager<T: Any, ID> : TypedDataQuery<T, ID> {
+  fun insert(id:ID, t: T): T
+  fun update(id: ID, t: T): T
+  fun delete(id: ID): ID
+}
+
 
 
 //- Data Manager shit

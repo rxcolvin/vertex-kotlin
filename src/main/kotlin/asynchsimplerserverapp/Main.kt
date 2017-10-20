@@ -1,7 +1,9 @@
 package asynchsimplerserverapp
 
 import adapters.AsyncChainAdapterChainAdapter
+import adapters.AsyncFullRestAdapter
 import adapters.AsyncLoggingAdapter
+import asynchdatamanageradapter.TypedAsyncDataManagerAdapter
 import asyncvertxhttpserverengine.HttpEngineConfig
 import asyncvertxhttpserverengine.VertxCfFactory
 import asyncvertxhttpserverengine.VertxHttpServerEngine
@@ -12,9 +14,12 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
 import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
+import datamanager.QueryAll
+import filestorage.TypedFileStorage
 import http.Action
 import http.Request
 import http.Response
+import inmemorydatamanager.InMemoryDataManager
 import io.vertx.core.MultiMap
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpMethod
@@ -64,26 +69,24 @@ fun main(args: Array<String>) {
         VertxOptions().setBlockedThreadCheckInterval(10000)
     )
 
-//    val gson =
-//        GsonBuilder()
-//            .registerTypeAdapter(LocalDate::class.java, LocalDateDeSerializer())
-//            .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
-//            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeDeSerializer())
-//            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
-//            .create()
+    val gson =
+        GsonBuilder()
+            .registerTypeAdapter(LocalDate::class.java, LocalDateDeSerializer())
+            .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeDeSerializer())
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .create()
 
-//    val competitionDataManager = InMemoryDataManager(
-//        keyFunc = Competition::competitionId,
-//        storage = FileStorage<Competition, String>(
-//            directory = File(config.storageBaseDir, "competitions"),
-//            keyToString = { it },
-//            stringToKey = { it },
-//            entityToString = gson::toJson,
-//            stringToEntity = { gson.fromJson(it, Competition::class.java) },
-//            fileExtension = "json"
-//        ),
-//        latencyEmulation = { 5000 }
-//    )
+    val competitionDataManager = InMemoryDataManager(
+        storage = TypedFileStorage<Person, String>(
+            directory = File(config.storageBaseDir, "persons"),
+            keyToString = { it },
+            stringToKey = { it },
+            entityToString = gson::toJson,
+            stringToEntity = { gson.fromJson(it, Person::class.java) },
+            fileExtension = "json"
+        )
+    )
 
 
     fun useAsync(): Manageable {
@@ -100,31 +103,24 @@ fun main(args: Array<String>) {
           logger = logger,
           processor = AsyncChainAdapterChainAdapter<Request, Response>(
               arrayOf(
-//                  AsyncFullRestAdapter<Request, Response, Context, Competition, String>(
-//                      assetType = "competition",
-//                      dataManager = AsyncDataManagerAdapter(
-//                          synchDataManager = competitionDataManager,
-//                          cfFactory = vertxCfFactory
-//                      ),
-//                      string2Asset = { gson.fromJson(it, Competition::class.java) },
-//                      buildContext = ::requestToContext,
-//                      asset2String = gson::toJson,
-//                      idResolver = { it.path[1] },
-//                      queryDefResolver = { QueryAll },
-//                      assets2String = { gson.toJson(it.toList()) },
-//                      getResolver = { it.action == Action.GET && it.path.size == 2 },
-//                      assetNameResolver = { it.path[0] },
-//                      queryResolver = { it.action == Action.GET && it.path.size == 1 },
-//                      postResolver = { it.action == Action.POST && it.path.size == 2 },
-//                      respFactory = { Response(200, it) },
-//                      assetIdResolver = Competition::competitionId
-//                  ),
-                  AsyncLoggingAdapter(
-                      path = "transmission",
-                      pathResolver = { it.path.joinToString(separator = "/") },
-                      actionResolver = { it.action.name },
-                      logger = logger,
-                      respFactory = { Response(200, "{\"status\":\"OK\"}") }
+                  AsyncFullRestAdapter<Request, Response, Context, Person, String>(
+                      assetType = "person",
+                      dataManager = TypedAsyncDataManagerAdapter(
+                          synchDataManager = competitionDataManager,
+                          cfFactory = vertxCfFactory
+                      ),
+                      string2Asset = { gson.fromJson(it, Person::class.java) },
+                      buildContext = ::requestToContext,
+                      asset2String = gson::toJson,
+                      idResolver = { it.path[1] },
+                      queryDefResolver = { QueryAll<Person>() }, //TODO
+                      assets2String = { gson.toJson(it.toList()) },
+                      getResolver = { it.action == Action.GET && it.path.size == 2 },
+                      assetNameResolver = { it.path[0] },
+                      queryResolver = { it.action == Action.GET && it.path.size == 1 },
+                      postResolver = { it.action == Action.POST && it.path.size == 2 },
+                      respFactory = { Response(200, it) },
+                      assetIdResolver = Person::uuid
                   )
               )
           )

@@ -1,6 +1,8 @@
 package adapters
 
 import asynchdatamanager.AsyncDataManager
+import asynchdatamanager.TypedAsyncDataManager
+import com.sun.xml.internal.bind.v2.model.core.ID
 import datamanager.QueryDef
 import httpengine.AsyncHandler
 import logging.Logger
@@ -9,15 +11,15 @@ import java.util.concurrent.CompletableFuture
 /**
  *
  */
-class AsyncFullRestAdapter<RQ, RP, C, T, ID>(
+class AsyncFullRestAdapter<RQ, RP, C, T:Any, ID>(
     val assetType: String,
     val buildContext: (RQ) -> C,
     val string2Asset: (String) -> T,
     val asset2String: (T) -> String,
     val assets2String: (Sequence<T>) -> String,
-    val dataManager: AsyncDataManager<T, ID>,
+    val dataManager: TypedAsyncDataManager<T, ID>,
     val idResolver: (RQ) -> ID,
-    val queryDefResolver: (RQ) -> QueryDef,
+    val queryDefResolver: (RQ) -> QueryDef<T>,
     val assetNameResolver: (RQ) -> String,
     val respFactory: (String) -> RP,
     val getResolver: (RQ) -> Boolean,
@@ -58,7 +60,6 @@ class AsyncFullRestAdapter<RQ, RP, C, T, ID>(
 
 
     override fun invoke(text: String): CompletableFuture<RP> {
-      //TODO: should validate the request id and the asset id are the same
       val id = idResolver(request)
       val asset = string2Asset(text)
       val assetId = assetIdResolver(asset)
@@ -70,7 +71,7 @@ class AsyncFullRestAdapter<RQ, RP, C, T, ID>(
       }
 
       logger.debug { "Post assetName=${assetNameResolver(request)} assetId=$assetId}" }
-      return dataManager.insert(asset).thenApply {
+      return dataManager.insert(assetId, asset).thenApply {
         respFactory(asset2String(it))
       }
     }
@@ -91,6 +92,6 @@ class AsyncFullRestAdapter<RQ, RP, C, T, ID>(
       } else null
 }
 
-class InconsistentIdException(assetId: String, pathId: String) : Exception()
+class InconsistentIdException(assetId: String, pathId: String) : Exception("Inconsistent Id")
 
 

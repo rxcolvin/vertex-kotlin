@@ -1,6 +1,5 @@
 package utils
 
-//import entitymeta.EntityMeta
 import io.vertx.core.MultiMap
 import java.io.File
 import java.time.LocalDateTime
@@ -13,21 +12,6 @@ import kotlin.reflect.declaredMemberProperties
 import kotlin.reflect.full.declaredMemberProperties
 import java.lang.Enum as JavaLangEnum
 
-
-/**
- * Asserts that the JDK Version is compatible with the EA library and
- * exists if not.
- */
-fun testJdkVersionForEA () {
-    val version = System.getProperty("java.version")
-    val model = System.getProperty("sun.arch.data.model")
-
-
-    if (model != "32" && !version.startsWith("1.8")) {
-        println("This application requires aa 32 bit JVM 1.8")
-        System.exit(1)
-    }
-}
 
 /**
  * Load a property map from a file
@@ -130,63 +114,6 @@ enum class State {
     NONE, NAME, PARAMETERS
 }
 
-fun String.macroize(f: (String)-> ((String) -> String)?) : String {
-
-    val ret = StringBuilder()
-    var state = State.NONE
-    var parameters = StringBuilder()
-    var name = StringBuilder()
-    var macro: ((String) -> String)? = null
-    var tsmacro: (String) -> String = {"Unexpected"}
-    for (i in 0..this.length -1) {
-        val c = this[i]
-        when (state) {
-            utils.State.NONE -> {
-                if (c == '@') {
-                    state = State.NAME
-                } else {
-                    ret.append(c)
-                }
-
-            }
-            utils.State.NAME -> {
-                if (c =='(') {
-                    macro = f(name.toString())
-                    if (macro == null) {
-                        ret.append('@')
-                        ret.append(name)
-                        ret.append('(')
-                        state = State.NONE
-                   } else {
-                        state = State.PARAMETERS
-                        tsmacro = macro
-                    }
-                    name = StringBuilder()
-                } else {
-                    name.append(c)
-                }
-
-            }
-            utils.State.PARAMETERS -> {
-                if (c==')') {
-                    ret.append(tsmacro(parameters.toString()))
-                    parameters = StringBuilder()
-                    state=State.NONE
-                } else {
-                    parameters.append(c)
-                }
-            }
-        }
-    }
-    if (name.isNotEmpty()) {
-        ret.append(macro)
-    }
-    if (parameters.isNotEmpty()) {
-        ret.append(parameters)
-    }
-
-    return ret.toString()
-}
 
 fun <K,V> getFrom(k:K, vararg maps: Map<K, V>) : V? {
 

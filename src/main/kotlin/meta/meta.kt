@@ -30,11 +30,10 @@ data class ComplexType<E : Any, E_ : Any>(
   override val name: String = type.simpleName!!
 }
 
-data class UnionType<T : Any>(
+data class UnionType(
     override val name: String,
-    val baseType: KClass<T>,
     val types: List<Type>
-) : CollectionType
+) : Type
 
 
 data class ListType<T : Type>(
@@ -55,9 +54,7 @@ interface Field<T : Type> {
  * Describes a Field that stores data a a given type.
  *  @param name the name of the field
  *  @param description describes the field
- *  @param fromString a function to convert a string to a value of the type: could throw an exception
- *  @param validate a function that validates that the given storage value is valid for the given type.If not a description of the error is returned else null if it is good. For example a File must exist/
- *  @param stringValidator a function that validates whether a given string can be converted into the storage type. If not a description is returned else null if it is good.
+ *  @param validator a Validator that validates that the given storage value is valid for the given type.If not a description of the error is returned else null if it is good. For example a File must exist/
  */
 data class AtomicField<T : Any>(
     override val type: AtomicType<T>,
@@ -73,12 +70,17 @@ data class ComplexField<E : Any, E_ : Any>(
     override val description: String
 ) : Field<ComplexType<E, E_>>
 
+data class UnionField(
+    override val type: UnionType,
+    override val name: String,
+    override val description: String
+) : Field<UnionType>
+
 
 data class ListField<T : Type>(
     override val type: T,
     override val name: String,
     override val description: String
-
 ) : Field<T>
 
 
@@ -136,8 +138,23 @@ class JsonEntityMapper<E, E_>(
       it.fromJson(map, b)
     }
     return b
+ }
+}
 
-  }
+interface JsonAtomicMapper<S, T> {
+  val fromJson: (S) -> T
+  val toJson: (T) -> S
+}
+
+
+object jsonStringMapper : JsonAtomicMapper<String, String> {
+  override val fromJson: (String) -> String = {it}
+  override val toJson: (String) -> String = {it}
+}
+
+object jsonIntMapper : JsonAtomicMapper<Int, Int> {
+  override val fromJson: (Int) -> Int = {it}
+  override val toJson: (Int) -> Int = {it}
 }
 
 
@@ -154,8 +171,7 @@ interface JsonFieldMapper<E, E_, T : Type, F : Field<T>> : FieldHolder<T, F> {
 
 class JsonAtomicFieldMapper<E, E_, T : Any, S : Any>(
     val entityField: EntityField<T, T?, AtomicType<T>, E, E_, AtomicField<T>>,
-    val fromJson: (S) -> T,
-    val toJson: (T) -> S
+    val jsonMapper: JsonAtomicMapper<S, T>
 ) : JsonFieldMapper<E, E_, AtomicType<T>, AtomicField<T>>,
     FieldHolder<AtomicType<T>, AtomicField<T>> by entityField {
 
@@ -167,7 +183,7 @@ class JsonAtomicFieldMapper<E, E_, T : Any, S : Any>(
       if (!validator.test(v)) {
         throw JsonException("${name} ${validator.msg}")
       }
-      map.put(name, toJson(v))
+      map.put(name, jsonMapper.toJson(v))
     }
   }
 
@@ -181,7 +197,7 @@ class JsonAtomicFieldMapper<E, E_, T : Any, S : Any>(
       val set_ = entityField.set_ as (E_?, T) -> Unit
       set_(
           entityBuilder,
-          fromJson(v)
+          jsonMapper.fromJson(v)
       )
     } else {
       if (entityField.nullable) {
@@ -196,7 +212,14 @@ class JsonAtomicFieldMapper<E, E_, T : Any, S : Any>(
   }
 }
 
-class JsonComplexFieldMapper<E, E_, X : Any, X_ : Any>(
+/**
+ * Maps a complex type  to and from JSON where the type is invariant
+ * @param E The type of the immutable entity class
+ * @param E_ The type of the entity builder class
+ * @param X The invariant complex type
+ * @param X_ The invariant complex builder type
+ */
+class JsonInvariantComplexFieldMapper<E, E_, X : Any, X_ : Any>(
     val entityField: EntityField<X, X_?, ComplexType<X, X_>, E, E_, ComplexField<X, X_>>,
     val jsonEntityMapper: JsonEntityMapper<X, X_>
 ) : JsonFieldMapper<E, E_, ComplexType<X, X_>, ComplexField<X, X_>>,
@@ -214,36 +237,84 @@ class JsonComplexFieldMapper<E, E_, X : Any, X_ : Any>(
     val x = jsonEntityMapper.fromJson(vMap)
     entityField.set_(entityBuilder, x)
   }
-
 }
 
-
-class JsonInvariantAtomicListFieldMapper<E, E_, Z : Any, X : List<Z>, X_ : MutableList<Z>, T : AtomicType<Z>>(
-    val entityField: EntityField<X, X?, T, E, E_, ListField<T>>
-) : JsonFieldMapper<E, E_, T, ListField<T>>,
-    FieldHolder<T, ListField<T>> by entityField {
+/**
+ * Maps a complex type  to and from JSON where the type is invariant
+ * @param E The type of the immutable entity class
+ * @param E_ The type of the entity builder class
+ * @param X The invariant complex type
+ * @param X_ The invariant complex builder type
+ */
+class JsonVariantComplexFieldMapper<E, E_, X : Any, X_ : Any>(
+    val entityField: EntityField<X, X_?, ComplexType<X, X_>, E, E_, ComplexField<X, X_>>,
+    val jsonEntityMapper: JsonEntityMapper<X, X_>
+) : JsonFieldMapper<E, E_, ComplexType<X, X_>, ComplexField<X, X_>>,
+    FieldHolder<ComplexType<X, X_>, ComplexField<X, X_>> by entityField {
   override fun toJson(entity: E, map: MutableMap<String, Any?>) {
     val v = entityField.get(entity)
+    map[entityField.field.name] = jsonEntityMapper.toJson(v)
   }
 
   override fun fromJson(
       map: Map<String, Any?>,
       entityBuilder: E_
   ) {
-    val list = map[entityField.field.name] as List<Any?>
+    val vMap = map[entityField.field.name] as Map<String, Any?>
+    val x = jsonEntityMapper.fromJson(vMap)
+    entityField.set_(entityBuilder, x)
+  }
+}
+
+
+/**
+ * Maps a list to and from JSON where the elements in the list contain an invariant atomic type into/out of
+ * a given Entity type
+ *
+ * @param E The type of the immutable entity class
+ * @param E_ The type of the entity builder class
+ * @param Z The invariant atomic Type
+ * @param T Some AtomicType TODO - will the type inference work wiht out this??
+ * @param S the JSON type that the invariant atomic type is represented by
+ */
+class JsonInvariantAtomicListFieldMapper<E, E_, Z : Any, T : AtomicType<Z>, S>(
+    val entityField: EntityField< List<Z>, MutableList<Z>?, T, E, E_, ListField<T>>,
+    val jsonMapper: JsonAtomicMapper<S, Z>
+) : JsonFieldMapper<E, E_, T, ListField<T>>,
+    FieldHolder<T, ListField<T>> by entityField {
+  override fun toJson(entity: E, map: MutableMap<String, Any?>) {
+    map[entityField.field.name] = entityField.get(entity).map {jsonMapper.toJson(it)}.toList()
+  }
+
+  override fun fromJson(
+      map: Map<String, Any?>,
+      entityBuilder: E_
+  ) {
+    val list = map[entityField.field.name] as List<S>
+
+    entityField.set_(entityBuilder, list.map {jsonMapper.fromJson(it)}.toMutableList())
   }
 
 }
 
+/**
+ * Maps a list to and from JSON where the elements in the list contain an invariant complex type into/out of
+ * a given Entity type
+ *
+ * @param E The type of the immutable entity class
+ * @param E_ The type of the entity builder class
+ * @param Z the type of the immutable invariante list elements
+ * @param Z_ the type of the builder for the invariant list type
+ * @Param T Some Complex type of Z, Z_
+ */
 class JsonInvariantComplexListFieldMapper<E, E_, Z : Any, Z_ : Any, T : ComplexType<Z, Z_>>(
-    val entityField: EntityField<List<Z>, MutableList<Z_>, T, E, E_, ListField<T>>,
-    val fromJson: (JsonMap) -> Z_,
-    val toJson: (Z)-> JsonMap
+    val entityField: EntityField<List<Z>, MutableList<Z_>?, T, E, E_, ListField<T>>,
+    val jsonEntityMapper: JsonEntityMapper<Z, Z_>
 ) : JsonFieldMapper<E, E_, T, ListField<T>>,
     FieldHolder<T, ListField<T>> by entityField {
   override fun toJson(entity: E, map: MutableMap<String, Any?>) {
     val vlist = entityField.get(entity)
-    map[entityField.field.name] = vlist.map(toJson)
+    map[entityField.field.name] = vlist.map(jsonEntityMapper::toJson)
   }
 
   override fun fromJson(
@@ -254,7 +325,7 @@ class JsonInvariantComplexListFieldMapper<E, E_, Z : Any, Z_ : Any, T : ComplexT
 
     entityField.set_(
         entityBuilder,
-        list.map { fromJson(it as JsonMap) }.toMutableList()
+        list.map { jsonEntityMapper.fromJson(it as JsonMap) }.toMutableList()
     )
   }
 }
@@ -440,14 +511,14 @@ fun <T : Enum<T>> enumFieldMeta(
 
 
 
-fun <E, E_> jsonStringMapper(
+fun <E, E_> jsonStringFieldMapper(
     field: EntityField<String, String?, AtomicType<String>, E, E_, AtomicField<String>>
 ): JsonFieldMapper<E, E_, AtomicType<String>, AtomicField<String>> =
-    JsonAtomicFieldMapper(field, { it }, { it })
+    JsonAtomicFieldMapper(field, jsonStringMapper)
 
 
-fun <E, E_> jsonIntMapper(
+fun <E, E_> jsonIntFieldMapper(
     field: EntityField<Int, Int?, AtomicType<Int>, E, E_, AtomicField<Int>>
 ): JsonFieldMapper<E, E_, AtomicType<Int>, AtomicField<Int>> =
-    JsonAtomicFieldMapper(field, { it }, { it })
+    JsonAtomicFieldMapper(field, jsonIntMapper)
 

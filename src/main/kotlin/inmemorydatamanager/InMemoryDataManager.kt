@@ -5,22 +5,24 @@ import datamanager.DataManager
 import datamanager.QueryAll
 import datamanager.QueryDef
 import datamanager.Sort
+import datamanager.TypedDataManager
 import logging.Logger
 import storage.Storage
+import storage.TypedStorage
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 /**
  * A AsyncDataManager that stores things in Memory
  */
-class InMemoryDataManager(
+class InMemoryDataManager<T: Any, ID>(
     val logger: Logger = Logger("InMemoryDataManager_Default", debugEnabled = true),
-    val storage: Storage,
+    val storage: TypedStorage<T, ID>,
     val latencyEmulation: (() -> Long)? = null
-) : DataManager {
-  val store = ConcurrentHashMap<KClass<*>, ConcurrentHashMap<*,*>>()
+) : TypedDataManager<T, ID> {
+  val store = ConcurrentHashMap<ID, T>()
 
-  override fun <T: Any> query(
+  override fun query(
       queryDef: QueryDef<T>,
       sort: Sort
   ): Sequence<T> {
@@ -30,7 +32,7 @@ class InMemoryDataManager(
     throw RuntimeException("QueryDef Not Found: ${queryDef}")
   }
 
-  override fun <T: Any> id(id: ID): T {
+  override fun id(id: ID): T {
     latencyEmulation?.let {
       val millis = it()
       logger.debug { "LatencyEmulation for $millis ms on Thread: ${Thread.currentThread()}" }
@@ -43,21 +45,17 @@ class InMemoryDataManager(
     throw  RuntimeException("Not Found: $id")
   }
 
-  override fun <T: Any> queryOne(queryDef: QueryDef<T>): T {
+  override fun  queryOne(queryDef: QueryDef<T>): T {
     throw RuntimeException("TODO")
   }
 
-  override fun <T:Any> insert(t: T): T {
-    val key = keyFunc(t)
-    store[key] = t
-    storage.put(key, t)
+  override fun insert(id: ID, t: T): T {
+    storage.put(id, t)
     return t
   }
 
   override fun update(id: ID, t: T): T {
-    val key = keyFunc(t)
-    store[key] = t
-    storage.put(key, t)
+    storage.put(id, t)
     return t
   }
 
