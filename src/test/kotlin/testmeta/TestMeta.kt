@@ -27,13 +27,13 @@ object dd {
 
 
   val bar = ComplexField<Bar, Bar_> (
-      type = barMeta.barType,
+      type = barMeta.type,
       name = "bar",
       description = "bar desc"
   )
 
   val bars = ListField<ComplexType<Bar, Bar_>> (
-      type = barMeta.barType,
+      type = barMeta.type,
       name = "bars",
       description = "bars desc"
   )
@@ -47,7 +47,7 @@ object dd {
   val hostelry = UnionField (
       type = UnionType(
           name = "hostelries",
-          types = listOf(barMeta.barType)
+          types = listOf(barMeta.type)
 
       ),
       name = "hostelry",
@@ -62,8 +62,7 @@ data class Foo(
     val age: Int,
     val bar: Bar,
     val bars: List<Bar>,
-    val cheeses: List<String>,
-    val hostelry: Hostelry
+    val cheeses: List<String>
 )
 
 data class Foo_(
@@ -71,8 +70,7 @@ data class Foo_(
     var age: Int?,
     var bar: Bar_?,
     var bars: MutableList<Bar_>?,
-    var cheeses: MutableList<String>?,
-    var hostelry: Hostelry_?
+    var cheeses: MutableList<String>?
 
 )
 
@@ -101,10 +99,9 @@ object fooMeta {
       val age: FH,
       val bar: FH,
       val bars: FH,
-      val cheeses: FH,
-      val hostelry: FH
+      val cheeses: FH
   ) : Fields<FH> {
-    override val all_ = listOf<FH>(name, age, bar, bars, cheeses, hostelry)
+    override val all_ = listOf<FH>(name, age, bar, bars, cheeses)
   }
 
   val name = EntityField(
@@ -142,25 +139,10 @@ object fooMeta {
       set_ = Foo_::cheeses::set
   )
 
-  val hostelry = EntityField(
-      field = dd.hostelry,
-      get = Foo::hostelry::get,
-      get_ = Foo_::hostelry::get,
-      set_ = Foo_::hostelry::set
-  )
 
-
-  val em = EntityMeta<Foo, Foo_>(
+  val type = ComplexType<Foo, Foo_> (
       name = "Foo",
-      fields = FooFields(
-          name = name,
-          age = age,
-          bar = bar,
-          bars = bars,
-          cheeses = cheeses,
-          hostelry = hostelry
-      ),
-      builderFactory = { Foo_(null, null, bar = null, bars = null, cheeses = null, hostelry = null) },
+      builderFactory = { Foo_(null, null, bar = null, bars = null, cheeses = null) },
       builder2Entity = {
         Foo(
             it.name!!,
@@ -170,8 +152,7 @@ object fooMeta {
             )
             ,
             it.bars!!.map { Bar(it.location!!)},
-            it.cheeses!!.toList(),
-            Hostelry(it.name) //O Farkit
+            it.cheeses!!.toList()
         )
       },
       entity2Builder = {
@@ -186,6 +167,19 @@ object fooMeta {
         )
       }
   )
+
+  val em = EntityMeta<Foo, Foo_>(
+      name = "Foo",
+      fields = FooFields(
+          name = name,
+          age = age,
+          bar = bar,
+          bars = bars,
+          cheeses = cheeses
+      ),
+      type = type
+
+   )
 
 
   val jm = JsonMeta<Foo, Foo_>(
@@ -211,8 +205,15 @@ object fooMeta {
 }
 
 object barMeta {
-  val barType = ComplexType (
-      Bar::class, Bar_::class
+  val type = ComplexType<Bar, Bar_> (
+      name = "Bar",
+      builder2Entity = {
+        Bar(
+          location = it.location!!
+      )
+      },
+      entity2Builder = {Bar_(it.location)},
+      builderFactory = { Bar_(location = null) }
   )
 
   val location = EntityField(
@@ -234,17 +235,8 @@ object barMeta {
       fields = BarFields(
           location = location
       ),
-      builderFactory = { Bar_(null) },
-      builder2Entity = {
-        Bar(
-            it.location!!
-        )
-      },
-      entity2Builder = {
-        Bar_(
-            it.location
-        )
-      }
+      type = type
+
   )
 
   val jm = JsonMeta<Bar, Bar_>(
