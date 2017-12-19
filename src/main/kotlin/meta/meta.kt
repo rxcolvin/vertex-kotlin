@@ -12,7 +12,9 @@ interface Type<T:Any> {
 }
 
 
-
+data class AtomicType<T: Any> (
+    override val type: KClass<T>
+)  : Type<T>
 
 data class ComplexType<T : Any, T_ : Any>(
     override val type: KClass<T>,
@@ -48,7 +50,7 @@ interface Field<T:Any, TYPE : Type<T>> {
  *  @param validator a Validator that validates that the given storage value is valid for the given type.If not a description of the error is returned else null if it is good. For example a File must exist/
  */
 data class AtomicField<T : Any>(
-    override val type: Type<T>,
+    override val type: AtomicType<T>,
     override val name: String,
     override val description: String,
     val validator: Validator<T>
@@ -75,23 +77,23 @@ data class ListField<T : Any>(
 ) : Field<List<T>, ListType<T>>
 
 
-interface FieldHolder<T : Type, out F : Field<T>> {
+interface FieldHolder<X: Any, T : Type<X>, out F : Field<X, T>> {
   val field: F
 }
 
-interface Fields<FH : FieldHolder<*, *>> {
+interface Fields<FH : FieldHolder<*, *, *>> {
   val all_: List<FH>
 }
 
 
 //
-data class EntityField<X, X_, T : Type, E, E_, out F : Field<T>>(
+data class EntityField<X: Any, X_: Any, T : Type<X>, E, E_, out F : Field<X, T>>(
     override val field: F,
     val get: (E) -> X,
     val get_: (E_) -> X_,
     val set_: (E_, X_) -> Unit,
     val nullable: Boolean = false
-) : FieldHolder<T, F>
+) : FieldHolder<X, T, F>
 
 
 data class EntityMeta<E: Any , E_: Any>(
@@ -153,13 +155,13 @@ object jsonIntMapper : JsonAtomicMapper<Int, Int> {
 /**
  * Maps a defined field between an entity and map that contains just JSON types.
  */
-interface JsonFieldMapper<E, E_, T : Type, F : Field<T>> : FieldHolder<T, F> {
+interface JsonFieldMapper<E: Any, E_, T : Type<E>, F : Field<E, T>> : FieldHolder<E, T, F> {
   fun toJson(entity: E, map: MutableMap<String, Any?>)
   fun fromJson(map: Map<String, Any?>, entityBuilder: E_)
 }
 
 class JsonAtomicFieldMapper<E, E_, T : Any, S : Any>(
-    val entityField: EntityField<T, T?, AtomicType<T>, E, E_, AtomicField<T>>,
+    val entityField: EntityField<T, T, AtomicType<T>, E, E_, AtomicField<E, T>>,
     val jsonMapper: JsonAtomicMapper<S, T>
 ) : JsonFieldMapper<E, E_, AtomicType<T>, AtomicField<T>>,
     FieldHolder<AtomicType<T>, AtomicField<T>> by entityField {

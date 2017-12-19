@@ -39,14 +39,13 @@ object dd {
   )
 
   val cheeses = ListField<AtomicType<String>> (
-      type = AtomicType<String>(String::class),
+      type = ListType<AtomicType<String>>(List<String>::class),
       name = "cheeses",
       description = "cheeses desc"
   )
 
   val hostelry = UnionField (
-      type = UnionType(
-          name = "hostelries",
+      type = UnionType<>(
           types = listOf(barMeta.type)
 
       ),
@@ -62,7 +61,8 @@ data class Foo(
     val age: Int,
     val bar: Bar,
     val bars: List<Bar>,
-    val cheeses: List<String>
+    val cheeses: List<String>,
+    val randoms: List<Any>
 )
 
 data class Foo_(
@@ -141,7 +141,6 @@ object fooMeta {
 
 
   val type = ComplexType<Foo, Foo_> (
-      name = "Foo",
       builderFactory = { Foo_(null, null, bar = null, bars = null, cheeses = null) },
       builder2Entity = {
         Foo(
@@ -264,7 +263,8 @@ fun main(args: Array<String>) {
           Bar("Place 1"),
           Bar("Place 2")
       ),
-      cheeses = listOf("Cheddar", "Edam")
+      cheeses = listOf("Cheddar", "Edam"),
+      randoms = listOf(1, "Ding", )
   )
 
 
