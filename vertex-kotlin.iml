@@ -13,7 +13,6 @@
           <option name="pluginClasspaths">
             <array />
           </option>
-          <option name="version" value="true" />
         </compilerArguments>
       </configuration>
     </facet>
@@ -24,6 +23,9 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/main/kotlin" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/kotlin" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
+      <excludeFolder url="file://$MODULE_DIR$/src/main/kotlin/meta" />
+      <excludeFolder url="file://$MODULE_DIR$/src/test/kotlin/testmeta" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -46,7 +48,7 @@
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.7.4" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.7.4" level="project" />
     <orderEntry type="library" name="Maven: io.vertx:vertx-lang-kotlin:3.4.1" level="project" />
-    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-reflect:1.1.51" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-reflect:1.2.10" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.1.1" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains:annotations:13.0" level="project" />
     <orderEntry type="library" name="Maven: io.reactivex:rxkotlin:0.60.0" level="project" />
