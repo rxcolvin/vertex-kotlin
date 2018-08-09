@@ -1,7 +1,6 @@
 package meta2
 
 import kotlin.reflect.KClass
-import kotlin.reflect.full.starProjectedType
 
 sealed class Type<K : Any> {
   abstract val klass: KClass<K>

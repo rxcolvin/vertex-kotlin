@@ -1,150 +1,178 @@
 package meta3
 
+import com.sun.xml.internal.bind.v2.model.core.ID
+import utils.getOrThrow
 import kotlin.reflect.KClass
 
 
-interface  Validator<K: Any?> {
-  fun test(t: K): Boolean
-  fun msg(t: K) : String
-}
-
-object DefaultValidator: Validator<Any?> {
-  override fun test(t: Any?) = true
-  override fun msg(t: Any?) = ""
-}
-
-interface  Type<K: Any> {
-  val name:String
-  val required: Boolean
+interface DbFieldMeta {
 
 }
 
 
-
-data class AtomicType<K : Any> (
-    override val name:String,
-    val kclass: KClass<K>,
-    val fromString: (String)->K,
-    val validate: Validator<K> = DefaultValidator as Validator<K>,
-    val toString: (K) -> String = {it.toString()}
- ) : Type<K> {
-  override val required = true
+interface EntityMetaHolder<E : Any> {
+  val kclass: KClass<E>
 }
 
-data class AtomicNullableType<K : Any> (
-    override val name:String,
-    val kclass: KClass<K>,
-    val fromString: (String)->K?,
-    val validate: Validator<K?> = DefaultValidator as Validator<K?>,
-    val toString: (K?) -> String? = {it?.toString()}
-) : Type<K>  {
-  override val required = true
+interface DbEntityMetaHolder<E : Any> : EntityMetaHolder<E> {
+  fun get(index: Int): DbFieldMeta
+}
+
+interface UIMetaHolder<E : Any> : EntityMetaHolder<E> {
+
+}
+
+class EntityDao<E : Any>
+(
+    val dbMetaHolder: DbEntityMetaHolder<E>
+) {
 
 }
 
 
-
-data class AtomicListType<K : Any> (
-    override val name:String,
-    val atomicType: AtomicType<K>
-) : Type<List<K>> {
-  override val required = true
+interface Type {
+  val typeName: String
 }
 
-
-data class ComplexListType<K: Any> (
-    override val name:String,
-    val array: Array<Type<*>>
-) : Type<List<K>>  {
-  override val required = true
+interface AtomicType<T : Any> : Type {
+  val tType: KClass<T>
 }
 
-open class FieldType<K: Any> (
-    val name: String,
-    val type: Type<K>
-)
-
- class AtomicFieldType<K: Any> (
-     name: String,
-     type: AtomicType<K>
-
-) : FieldType<K>  (
-     name, type
-)
-
-
-data class ComplexType<K: Any> (
-    override val name: String,
-    val array: Array<FieldType<*>>
-) : Type<K> {
-  override val required = true
+class FStringType(
+    val length: Int
+) : AtomicType<String> {
+  override val typeName = "FString-" + length
+  override val tType = String::class
 }
 
-val atomicString = AtomicType<String>(
-    name = "String",
-    kclass = String::class,
-    fromString = {it}
-)
+object StringType
+  : AtomicType<String> {
+  override val typeName = "String"
+  override val tType = String::class
+}
 
-val atomicString_ = AtomicNullableType<String>(
-    name = "String?",
-    kclass = String::class,
-    fromString = {it}
-)
+object IntType : AtomicType<Int> {
+  override val tType = Int::class
+  override val typeName = "Int"
+}
 
+interface Field {
+  val fieldName: String
+}
 
-val atomicInt = AtomicType<Int>(
-    name = "Int",
-    kclass = Int::class,
-    fromString = {it.toInt()}
-)
+class AtomicField<T : Any>(
+    override val fieldName: String,
+    val atomicType: AtomicType<T>
+) : Field
 
-val name = AtomicFieldType<String>(
-  "name", atomicString
-)
-
-val age = AtomicFieldType<Int> (
-    name  = "age",
-    type = atomicInt
-)
+open class EntityType(
+    override val typeName: String,
+    val fields: List<AtomicField<*>>
+) : Type
 
 
 data class Person(
-    val name: String
+    val name: String,
+    val age: Int
 )
 
-val person = ComplexType<Person>(
-    "Person",
-    arrayOf(
-        name, age
+val nameField = AtomicField("name", StringType)
+val ageField = AtomicField("age", IntType)
+
+object PersonType : EntityType(
+    typeName = "Person",
+    fields = listOf(
+        nameField,
+        ageField
     )
 )
 
-//Entity Meta
+interface QueryDef
+
+interface DbMapper<T, ID> {
+  fun updateSchema()
+  fun getById(id: ID): T
+  fun put(item: T)
+  fun query(queryDef: QueryDef): List<T>
+}
 
 
-class EntityField<E, E_, K: Any> (
-    val fieldType: Type<K>,
-    val getter: (E_) -> K
+interface Tuple {
+  val arity: Int
+}
+
+data class T1<X> (
+  val v1: X
+): Tuple {
+  override val arity = 1
+}
+
+data class DbColumn (
+    val colName: String
 )
 
-class EntityMeta<E, E_, K: Any> (
-    val complexType: ComplexType<K>
-
-)
-
-
-//DbMeta
-class DbColumn<K: Any>(
-    val fieldType: AtomicFieldType<K>
-)
-
-
-//UIMeta
+interface AtomicTypeDbMapper {
+  fun dbColumns(fieldName: String) : List<DbColumn>
+}
 
 
 
+class JdbcDbMapper<T, ID>(
+    val entityType: EntityType,
+    val map: Map<KClass<out AtomicType<out Any>>, AtomicTypeDbMapper>
+) : DbMapper<T, ID> {
 
+  override fun updateSchema() {
+    println("Table Name=${entityType.typeName}")
+    entityType.fields.forEach {
+       map.get(it.atomicType::class)?.dbColumns(it.fieldName)?.forEach {
+        println(it.colName)
+      }
+    }
 
+  }
 
+  override fun getById(id: ID): T {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
+
+  override fun put(item: T) {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
+
+  override fun query(queryDef: QueryDef): List<T> {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
+
+}
+
+object StringTypeDbMapper : AtomicTypeDbMapper {
+  override fun dbColumns(fieldName: String): List<DbColumn> {
+    return listOf(
+        DbColumn(fieldName)
+    )
+  }
+
+}
+
+object IntTypeDbMapper : AtomicTypeDbMapper {
+  override fun dbColumns(fieldName: String): List<DbColumn> {
+    return listOf(
+        DbColumn(fieldName)
+    )
+  }
+
+}
+
+fun main(args: Array<String>) {
+  val dbMapper = JdbcDbMapper<Person, String> (
+      PersonType,
+      mapOf(
+          StringType::class to StringTypeDbMapper,
+          IntType::class to IntTypeDbMapper
+      )
+  )
+
+  dbMapper.updateSchema()
+}
 
